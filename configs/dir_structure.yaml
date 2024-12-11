@@ -1,0 +1,84 @@
+ubam_dir:
+  name:
+    ubam
+  extensions:
+    - .ubam
+    - .ubam.bai
+bam_dir:
+  name:
+    bam
+  extensions:
+    - .bam
+    - .bam.bai
+cram_dir:
+  name:
+    cram
+  extensions:
+    - .cram
+    - .cram.crai
+bamstats_dir:
+  name:
+    bamstats
+  extensions:
+    - .flagstats.tsv
+    - .readstats.tsv.gz
+align_dir:
+  name:
+    minimap2
+base_stats_dir:
+  name:
+    base_statistics
+  extensions:
+    - .stats.json
+    - report.html
+mosdepth_dir:
+  name:
+    mosdepth
+  extensions:
+    - .mosdepth.global.dist.txt
+    - .mosdepth.summary.txt
+    - .regions.bed.gz
+    - .thresholds.bed.gz
+snp_dir:
+  name:
+    clair3
+  extensions:
+    - snp.vcf.gz
+    - snp.vcf.gz.tbi
+    - clinvar.vcf
+sv_dir:
+  name:
+    sniffles2
+  extensions:
+    - sv.snf
+    - sv.vcf.gz
+    - sv.vcf.gz.tbi
+cnv_dir:
+  name:
+    spectre
+  extensions:
+    - cnv.vcf.gz
+    - cnv.vcf.gz.tbi
+str_dir:
+  name:
+    straglr
+  extensions:
+    - .straglr.tsv
+    - str.vcf.gz
+    - str.vcf.gz.tbi
+mod_dir:
+  name:
+    modkit
+  extensions:
+    - .bedmethyl.gz
+whatshap_dir:
+  name:
+    whatshap
+  extensions:
+    - .haploblocks.gtf
+other_dir:
+  name:
+    other
+tmp_dir:
+  name:
+    tmp
