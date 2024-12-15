@@ -20,9 +20,21 @@ def ch_d(d):
     print(d)
     exit()
 
-def main(in_dir:str, model:str):
+def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, dict_type:str) -> dict:
+    target_dict[sample] = {}
+    if dict_type == 'job_listing':
+        target_dict[sample].fromkeys(sections, [])
+    elif dict_type == 'job_logging':
+        target_dict[sample].fromkeys(sections, {})
+    return target_dict
+
+def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
+    pending_jobs[sample][stage].extend(job_ids)
+    job_results[sample][stage] = dict.fromkeys(job_ids, '')
+
+def main():
     # create subdirs in dir
-    for dir_data in directories_data.values():
+    for dir_data in directories.values():
         os.makedirs(dir_data['path'], exist_ok=True) 
 
     sample_dirs = get_dirs_in_dir(dir=in_dir)
@@ -32,49 +44,46 @@ def main(in_dir:str, model:str):
     samples = list(sample_data.keys())
     samples.sort()
         
-    # Create list for slurm jobs (each for one type of jobs)
-    pending_jobs = {}
-    pending_basecalling_jobs = {}
-    
-    # create dict for saving of job results
-    job_results = {}
-
     # Loop will proceed until we're out of jobs for submitting or samples to process
-    while samples or pending_jobs or pending_basecalling_jobs:
+    while samples or pending_jobs:
         # Choose sample
         if samples:
+            sample_job_ids = dict.fromkeys(stages, [])
+            # pop sample from initial sample list
             sample = samples.pop(0)
-            pending_jobs[sample] = []
-            # 
-            job_results[sample] = {}
+            pending_jobs = create_sample_sections_in_dict(target_dict=pending_jobs, sample=sample,
+                                                          sections=stages, dict_type='job_listing')
+            job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
+                                                          sections=stages, dict_type='job_logging')
             fast5_dirs = sample_data[sample]
             
-            # Start converting to pod5
-            job_results[sample]['converting'] = {}
-            job_ids_converting = convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
-                                                       out_dir=out_dir, threads=threads_per_converting, ntasks=tasks_per_machine_converting)
-            pending_jobs[sample].extend(job_ids_converting)
-# НАДО РЕАЛИЗОВАТЬ ДЛЯ pending_basecalling_jobs ПРОВЕРКУ, ЧТОБЫ ПЕРВАЯ ТАСКА, ЗАВЕРШЕННАЯ ДЛЯ ОБРАЗЦА, ПОШЛА В РАБОТУ НА ДАУНСТРИМ
-            for job in job_ids_converting:
-                job_results[sample]['converting'][job] = ''
-
-            # Pulling basecalling task, which will start after all converting jobs finish succesfully
-            job_results[sample]['basecalling'] = {}
-            job_ids_basecalling = []
+            # Pulling converting task
+            sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
+                                                                      out_dir=directories['pod5_dir']['path'],
+                                                                      threads=threads_per_converting,
+                                                                      ntasks=tasks_per_machine_converting))
+                        
             for mod_bases in ['5mCG_5hmCG', '5mCG']:
-                job_results[sample]['basecalling'][mod_bases] = {}
-                job_id_basecalling = basecalling(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
-                                                mod_bases=mod_bases, model=model, dependency=job_ids)
-                job_results[sample]['basecalling'][mod_bases][job_id_basecalling] = ''
-                job_ids_basecalling.append(job_id_basecalling)
-
-            pending_jobs[sample].extend(job_ids_basecalling)
+                job_id_basecalling, ubam = basecalling(sample=sample,
+                                                 in_dir=directories['pod5_dir']['path'],
+                                                 out_dir=directories['ubam_dir']['path'],
+                                                mod_bases=mod_bases, model=dorado_model,
+                                                dependency=sample_job_ids['converting'])
+                sample_job_ids['basecalling'].append(job_id_basecalling)
                 
+                job_id_aligning = aligning(sample=sample, ubam=ubam, out_dir=directories['bam_dir']['path'],
+                                           mod_bases=mod_bases, ref=dorado_model, dependency=[job_ids_basecalling],
+                                           exclude_nodes=exclude_node_cpu)
+                sample_job_ids['aligning'].append(job_id_aligning)
+
+                job_id_modkit = modifications_lookup(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
+                                                mod_bases=mod_bases, model=model, dependency=job_ids)
+                sample_job_ids['mod_lookup'].append(job_id_modkit)
             
-            # Pulling alignment task, which will start after basecalling jobs finish succesfully
-            job_id_aligning = aligning(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
-                                             mod_bases=mod_bases, model=model, dependency=[job_id_basecalling])
-            
+            sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
+                                                mod_bases=mod_bases, model=model, dependency=job_ids_aligning))
+            for stage, job_ids in sample_job_ids.items():
+                store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
         
         # Check conversion jobs
         for sample, jobs in pending_conversion_jobs:
@@ -111,14 +120,22 @@ out_dir = f'{os.path.normpath(os.path.join(sys.argv[4]))}{os.sep}'
 dorado_model = f'{os.path.normpath(os.path.join(sys.argv[5]))}{os.sep}'
 threads_per_machine = sys.argv[6]
 
+ref_fasta = '/common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
+#FININSH IT!!!
+ref_tr_bed = '/common_share/nanopore_service_files/ref_files/' 
+
+# we don't want to use dgx10 for this time as CPU node
+exclude_node_cpu = ['dgx10']
+exclude_node_gpu = []
+
 configs = f"{os.path.dirname(os.path.realpath(__file__).replace('src', 'configs'))}/"
 
-directories_data = load_yaml(file_path=f'{configs}dir_structure.yaml')
+directories = load_yaml(file_path=f'{configs}dir_structure.yaml')
+stages = ['converting', 'basecalling', 'aligning', 'sv_lookup', 'mod_lookup']
 
 # generate paths strings for subdirs in out_dir
-for d in directories_data.keys():
-    dir_name = directories_data[d]['name']
-    directories_data[d]['path'] = f'{os.path.join(out_dir, dir_name)}{os.sep}'
+for d in directories.keys():
+    directories[d]['path'] = f'{os.path.join(out_dir, directories[d]['name'])}{os.sep}'
 
 # How many tasks should be run on one machine concurrently 
 tasks_per_machine_converting = '16'
@@ -131,6 +148,14 @@ threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machin
 threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 64))
 threads_per_calling_sv = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_sv)), 32))
 threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 8))
+
+# unfinished jobs will be stored there.
+# Structure: {sample:{stage1:[job_id_0, job_id_1], stage2:[job_id_2]}} 
+pending_jobs = {}
+    
+# finished jobs will be stored there (logging purposes)
+# Structure: {sample:{stage1:{job_id_0 : exit_code, job_id_1 : exit_code}, stage2:{job_id_2 : exit_code}}} 
+job_results = {}
 
 if __name__ == "__main__":
     main()

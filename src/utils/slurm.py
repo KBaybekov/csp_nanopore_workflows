@@ -1,6 +1,8 @@
 import pyslurm
 
-def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1, ntasks:int=1, dependency:list=None):
+def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1,
+                     ntasks:int=1, dependency:list=None, dependency_type:str='all',
+                     exclude_nodes:list=[]):
     """Отправка задачи в SLURM
     :param command: команда для CLI
     :param job_name: наименование задачи
@@ -8,6 +10,7 @@ def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1, ntas
     :param nodes: количество машин для задачи
     :param ntasks: количество задач на задание
     :param dependency: задачи, по успешному завершению которых будет запущено задание
+    :param dependency_type: тип зависимости от задач - должны быть успешно выполнены все либо любая из задач ('all','any')
     :return: id задачи Slurm
     """
     job = {
@@ -18,9 +21,14 @@ def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1, ntas
         "nodes": nodes,
         "output": f"/tmp/{job_name}_%j.out"
     }
-
+    if exclude_nodes:
+        job["exclude"] = f"{','.join(exclude_nodes)}"
     if dependency:
-        job["dependency"] = f"afterok:{':'.join(map(str, dependency))}"
+        if dependency_type == 'all':
+            delimiter = ':'
+        elif dependency_type == 'any':
+            delimiter = '?'
+        job["dependency"] = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
 
     job_id = pyslurm.job().submit_batch_job(job)
     print(f"Job {job_name} submitted with ID {job_id}")

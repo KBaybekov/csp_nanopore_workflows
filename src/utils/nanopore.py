@@ -22,7 +22,7 @@ def get_fast5_dirs(dir:str) -> list:
         raise FileNotFoundError('FAST5 файлы не найдены!')
     return list(set(fast5s))
 
-def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, ntasks:int):
+def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, ntasks:int, exclude_nodes:list=[]):
     """
     Запуск задачи конвертации fast5 -> pod5 на CPU. Задача выполняется на одной ЦПУ ноде
     :param fast5_dirs: папки с файлами для конвертации
@@ -33,26 +33,31 @@ def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str,
     :return: список id задач Slurm для образца
     """
     job_ids = []
+    pod5_dir = f'{os.path.join(out_dir, sample)}{os.sep}'
     for idx, fast5_dir in enumerate(fast5_dirs):
         pod5_name = f"{idx}"
-        command = f"pod5 convert fast5 {fast5_dir}*.fast5 --output {out_dir}{sample}/{pod5_name}.pod5 --threads {threads}"
+        command = f"pod5 convert fast5 {fast5_dir}*.fast5 --output {pod5_dir}/{pod5_name}.pod5 --threads {threads}"
         job_id = submit_slurm_job(command, partition="cpu_nodes",
                                   job_name=f"pod5_convert_{sample}_{pod5_name}",
-                                  nodes=1, ntasks=ntasks)
+                                  nodes=1, ntasks=ntasks, exclude_nodes=exclude_nodes)
         job_ids.append(job_id)
     return job_ids
 
-def basecalling(sample:str, pod5_dir:str, ubam_dir:str, mod_bases:str, model:str, dependency:list):
+def basecalling(sample:str, in_dir:str, out_dir:str, mod_bases:str, model:str, dependency:list, exclude_nodes:list=[]) -> tuple:
     """Запуск бейсколлинга на GPU"""
 
-    sample_pod5_dir = f'{os.path.join(pod5_dir,sample)}{os.sep}'
+    pod5_dir = f'{os.path.join(in_dir,sample)}{os.sep}'
+    ubam_dir = f'{os.path.join(out_dir,sample)}{os.sep}'
+    ubam = f'{ubam_dir}{sample}_{mod_bases.replace('_', '-')}.ubam'
 
-    command = f"dorado basecaller --modified-bases {mod_bases} {model} {sample_pod5_dir}*.pod5 > {sample_ubam_dir}{sample}_{mod_bases.replace('_', '-')}.ubam"
-    return submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}", dependency=dependency)
+    command = f"dorado basecaller --modified-bases {mod_bases} {model} {pod5_dir}*.pod5 > {ubam}"
+    return (submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}_{mod_bases}", dependency=dependency), ubam)
 
-def aligning(sample:str, pod5_dir:str, ubam_dir:str, mod_bases:str, model:str, dependency:list):
+def aligning(sample:str, ubam:str, out_dir:str, mod_bases:str, ref:str, dependency:list, exclude_nodes:list=[]):
     """Запуск выравнивания на CPU нодах"""
+    bam_dir = f'{os.path.join(out_dir,sample)}{os.sep}'
 
-
-    command = f"nextflow run epi2me-labs/wf-alignment --bam /common_share/source_files/ubam/mod/5mCG/770720000101_5mCG.ubam --out_dir /common_share/demo/full/ --prefix 16_ --references /common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna --threads 16"
-    return submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}", dependency=dependency)
+    command = f"nextflow run epi2me-labs/wf-alignment --bam {ubam} --out_dir {bam_dir} --prefix {sample} --references {ref} --threads {threads}"
+    return (submit_slurm_job(command, partition="cpu_nodes", nodes=1,
+                            job_name=f"align_{sample}_{mod_bases}",
+                            dependency=dependency, exclude_nodes=exclude_nodes), bam)
