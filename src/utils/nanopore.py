@@ -48,7 +48,7 @@ def basecalling(sample:str, in_dir:str, out_dir:str, mod_type:str, model:str, de
 
     pod5_dir = f'{os.path.join(in_dir,sample)}{os.sep}'
     ubam_dir = f'{os.path.join(out_dir,sample)}{os.sep}'
-    ubam = f'{ubam_dir}{sample}_{mod_type.replace('_', '-')}.ubam'
+    ubam = f"{ubam_dir}{sample}_{mod_type.replace('_', '-')}.ubam"
 
     command = f"dorado basecaller --modified-bases {mod_type} {model} {pod5_dir}*.pod5 > {ubam}"
     return (submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}_{mod_type}", dependency=dependency), ubam)
