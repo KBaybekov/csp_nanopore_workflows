@@ -51,16 +51,6 @@ class TestNanoporeUtils(unittest.TestCase):
         )
 
     @patch('utils.slurm.submit_slurm_job')
-    def _test_aligning(self, mock_submit):
-        mock_submit.return_value = 1004
-
-        job_id, bam = aligning('sample', '/input/sample_5mCG.ubam', '/output', '5mCG', 'ref.fasta', '16', [1003])
-        self.assertEqual(job_id, 1004)
-        self.assertEqual(bam, '/output/sample/sample_5mCG.bam')
-
-        mock_submit.assert_called_once()
-
-
     def test_aligning(self, mock_pyslurm_job, mock_submit):
         # Мокаем объект, который возвращается от pyslurm.job
         mock_job_instance = MagicMock()
