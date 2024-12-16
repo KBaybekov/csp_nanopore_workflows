@@ -7,6 +7,7 @@ from utils.nanopore import get_fast5_dirs, convert_fast5_to_pod5, basecalling, a
 
 
 class TestNanoporeUtils(unittest.TestCase):
+    @patch('pyslurm.job')
 
     @patch('os.walk')
     def test_get_fast5_dirs(self, mock_walk):
@@ -50,7 +51,7 @@ class TestNanoporeUtils(unittest.TestCase):
         )
 
     @patch('utils.slurm.submit_slurm_job')
-    def test_aligning(self, mock_submit):
+    def _test_aligning(self, mock_submit):
         mock_submit.return_value = 1004
 
         job_id, bam = aligning('sample', '/input/sample_5mCG.ubam', '/output', '5mCG', 'ref.fasta', '16', [1003])
@@ -58,6 +59,31 @@ class TestNanoporeUtils(unittest.TestCase):
         self.assertEqual(bam, '/output/sample/sample_5mCG.bam')
 
         mock_submit.assert_called_once()
+
+
+    def test_aligning(self, mock_pyslurm_job, mock_submit):
+        # Мокаем объект, который возвращается от pyslurm.job
+        mock_job_instance = MagicMock()
+        mock_pyslurm_job.return_value = mock_job_instance
+
+        # Мокаем функцию submit_slurm_job, чтобы она возвращала фиктивный job_id
+        mock_submit.return_value = 1004  # Мокаем возвращаемое значение (ID задания)
+
+        # Вызов функции aligning, которая использует submit_slurm_job
+        job_id, bam = aligning('sample', '/input/sample_5mCG.ubam', '/output', '5mCG', 'ref.fasta', '16', [1003])
+
+        # Проверка, что функция вернула правильные значения
+        self.assertEqual(job_id, 1004)
+        self.assertEqual(bam, '/output/sample/sample_5mCG.bam')
+
+        # Проверка, что submit_slurm_job был вызван один раз
+        mock_submit.assert_called_once()
+
+        # Проверка, что pyslurm.job был вызван
+        mock_pyslurm_job.assert_called_once()
+
+        # Убедимся, что job.submit_batch_job() не вызывает ошибок
+        mock_job_instance.submit_batch_job.assert_called_once()
 
 
 if __name__ == '__main__':
