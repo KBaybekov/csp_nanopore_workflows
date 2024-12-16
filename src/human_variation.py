@@ -12,7 +12,7 @@ import os
 import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.common import get_dirs_in_dir, load_yaml
-from utils.nanopore import aligning, basecalling, convert_fast5_to_pod5, get_fast5_dirs
+from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import is_slurm_job_running
 
 
@@ -57,36 +57,51 @@ def main():
                                                           sections=stages, dict_type='job_logging')
             fast5_dirs = sample_data[sample]
             
-            # Pulling converting task
+            # Pulling converting task, one per job
             sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
                                                                       ntasks=tasks_per_machine_converting))
-                        
-            for mod_bases in ['5mCG_5hmCG', '5mCG']:
+
+            # Basecalling, aligning and mod lookup will be performed for each modification type in list          
+            for mod_type in mod_bases:
+                # basecalling results will be stored in ubam dir of sample.
+                #GPU
                 job_id_basecalling, ubam = basecalling(sample=sample,
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
-                                                mod_bases=mod_bases, model=dorado_model,
+                                                mod_type=mod_type, model=dorado_model,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
                 
-                job_id_aligning = aligning(sample=sample, ubam=ubam, out_dir=directories['bam_dir']['path'],
-                                           mod_bases=mod_bases, ref=dorado_model, dependency=[job_ids_basecalling],
-                                           exclude_nodes=exclude_node_cpu)
+                # Alignment results will be stored in bam dir of sample.
+                #CPU
+                job_id_aligning, bam = aligning(sample=sample, ubam=ubam, out_dir=directories['bam_dir']['path'],
+                                           mod_type=mod_type, ref=dorado_model, threads=threads_per_align,
+                                           dependency=[job_id_basecalling], exclude_nodes=exclude_node_cpu)
                 sample_job_ids['aligning'].append(job_id_aligning)
 
-                job_id_modkit = modifications_lookup(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
-                                                mod_bases=mod_bases, model=model, dependency=job_ids)
-                sample_job_ids['mod_lookup'].append(job_id_modkit)
+                # mod lookup results will be stored in common dir of sample.
+                #CPU
+                sample_job_ids['mod_lookup'].append(modifications_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
+                                                     mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
+                                                     threads=threads_per_calling_mod, dependency=[job_id_aligning],
+                                                     exclude_nodes=exclude_node_cpu))
             
-            sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, pod5_dir=pod5_dir, ubam_dir=out_dir,
-                                                mod_bases=mod_bases, model=model, dependency=job_ids_aligning))
+            # SV calling will be performed just once with using of the first ready BAM 
+            # SV lookup results will be stored in common dir of sample.
+            #CPU
+            sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
+                                                     mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
+                                                     tr_bed=ref_tr_bed, threads=threads_per_calling_sv, dependency=sample_job_ids['aligning'],
+                                                     dependency_type='any', exclude_nodes=exclude_node_cpu))
+            
+            # Sample related job ids will be stored in logging dict
             for stage, job_ids in sample_job_ids.items():
                 store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
         
-        # Check conversion jobs
-        for sample, jobs in pending_conversion_jobs:
+        # Check pending jobs
+        elif pending_jobs:
             job_ids = jobs.copy()
             for job_id in job_ids:
                 if not is_slurm_job_running(job_id):
@@ -95,8 +110,8 @@ def main():
             if not pending_conversion_jobs[sample]:
                 del pending_conversion_jobs[sample]
                 # create task for every modification that chemistry of ONT kit allows
-                for mod_bases in ['5mCG_5hmCG', '5mCG']:
-                    job_id = basecalling(sample=sample, mod_bases=mod_bases, model=model)(sample:str, pod5_dir:str, ubam_dir:str, mod_bases:str, model:str, dependency:list):
+                for mod_base in ['5mCG_5hmCG', '5mCG']:
+                    job_id = basecalling(sample=sample, mod_base=mod_base, model=model)(sample:str, pod5_dir:str, ubam_dir:str, mod_base:str, model:str, dependency:list):
                 pending_basecalling_jobs.update({sample:job_id})
 
         # Check basecalling jobs
@@ -121,8 +136,8 @@ dorado_model = f'{os.path.normpath(os.path.join(sys.argv[5]))}{os.sep}'
 threads_per_machine = sys.argv[6]
 
 ref_fasta = '/common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
-#FININSH IT!!!
-ref_tr_bed = '/common_share/nanopore_service_files/ref_files/' 
+ref_tr_bed = '/common_share/nanopore_service_files/ref_files/human_GRCh38_no_alt_analysis_set.trf.bed'
+mod_bases = ['5mCG_5hmCG', '5mCG']
 
 # we don't want to use dgx10 for this time as CPU node
 exclude_node_cpu = ['dgx10']
