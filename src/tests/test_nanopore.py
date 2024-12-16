@@ -53,6 +53,7 @@ class TestNanoporeUtils(unittest.TestCase):
     def test_aligning(self, mock_pyslurm_job, mock_submit):
         # Мокаем объект, который возвращается от pyslurm.job
         mock_job_instance = MagicMock()
+        print(mock_pyslurm_job)
         mock_pyslurm_job.return_value = mock_job_instance
 
         # Мокаем функцию submit_slurm_job, чтобы она возвращала фиктивный job_id
@@ -72,7 +73,7 @@ class TestNanoporeUtils(unittest.TestCase):
         mock_pyslurm_job.assert_called_once()
 
         # Убедимся, что job.submit_batch_job() не вызывает ошибок
-        #mock_job_instance.submit_batch_job.assert_called_once()
+        mock_job_instance.submit_batch_job.assert_called_once()
 
 
 if __name__ == '__main__':
