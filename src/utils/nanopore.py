@@ -1,5 +1,7 @@
 import os
-from slurm import submit_slurm_job
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.slurm import submit_slurm_job
 
 def get_fast5_dirs(dir:str) -> list:
     """
