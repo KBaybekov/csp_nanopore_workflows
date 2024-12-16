@@ -7,8 +7,6 @@ from utils.nanopore import get_fast5_dirs, convert_fast5_to_pod5, basecalling, a
 
 
 class TestNanoporeUtils(unittest.TestCase):
-    @patch('pyslurm.job')
-
     @patch('os.walk')
     def test_get_fast5_dirs(self, mock_walk):
         mock_walk.return_value = [
@@ -50,6 +48,7 @@ class TestNanoporeUtils(unittest.TestCase):
             dependency=[1001]
         )
 
+    @patch('pyslurm.job')
     @patch('utils.slurm.submit_slurm_job')
     def test_aligning(self, mock_pyslurm_job, mock_submit):
         # Мокаем объект, который возвращается от pyslurm.job
