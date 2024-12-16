@@ -32,6 +32,52 @@ def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
     pending_jobs[sample][stage].extend(job_ids)
     job_results[sample][stage] = dict.fromkeys(job_ids, '')
 
+def generate_job_status_report(pending_jobs, job_results):
+    report = {}
+
+    # check every sample in pending_jobs
+    for sample, stages in pending_jobs.items():
+        report[sample] = {}
+
+        # check every  stage in sample
+        for stage, jobs in stages.items():
+            report[sample][stage] = {}
+
+            # for each job_id retrieve status job_results
+            for job_id in jobs:
+                # Получаем статус из job_results и добавляем в отчет
+                status = job_results.get(sample, {}).get(stage, {}).get(job_id, 'Unknown')
+                report[sample][stage][job_id] = status
+
+    return report
+
+# 1.ОБНОВИТЬ ЛОГИКУ ПРОВЕРКИ СТАТУСА ЗАДАЧ СЛЕРМА
+# 2.ДОПИСАТЬ ПРОВЕРКУ СТАТУСОВ И ВЫДАЧИ РЕЗУЛЬТАТОВ
+def update_pending_jobs(pending_jobs, job_results):
+    # check every sample in pending_jobs
+    for sample, stages in pending_jobs.items():
+        # check every  stage in sample
+        for stage, jobs in stages.items():
+            # new list for remaining job_ids
+            updated_jobs = []
+
+            # Для каждого job_id в stage проверяем его статус в job_results
+            for job_id in jobs:
+                # Получаем статус из job_results
+                status = job_results.get(sample, {}).get(stage, {}).get(job_id, 'Unknown')
+
+                # Если статус False, пропускаем задачу (удаляем её из pending_jobs)
+                if status == False:
+                    continue
+                
+                # Если статус не False, оставляем задачу
+                updated_jobs.append(job_id)
+
+            # Обновляем список задач для текущего stage
+            stages[stage] = updated_jobs
+
+    return pending_jobs
+
 def main():
     # create subdirs in dir
     for dir_data in directories.values():
@@ -102,24 +148,9 @@ def main():
         
         # Check pending jobs
         elif pending_jobs:
-            job_ids = jobs.copy()
-            for job_id in job_ids:
-                if not is_slurm_job_running(job_id):
-                    pending_conversion_jobs[sample].remove((job_id, sample))
-            # if no conversion jobs remaining for sample, basecalling starts
-            if not pending_conversion_jobs[sample]:
-                del pending_conversion_jobs[sample]
-                # create task for every modification that chemistry of ONT kit allows
-                for mod_base in ['5mCG_5hmCG', '5mCG']:
-                    job_id = basecalling(sample=sample, mod_base=mod_base, model=model)(sample:str, pod5_dir:str, ubam_dir:str, mod_base:str, model:str, dependency:list):
-                pending_basecalling_jobs.update({sample:job_id})
-
-        # Check basecalling jobs
-        for sample, job_id in pending_basecalling_jobs.items():
-            if not is_slurm_job_running(job_id):
-                del pending_basecalling_jobs[sample]
-        # print summary check every 30 sec
-        #print_running_jobs()
+            job_results = generate_job_status_report(pending_jobs, job_results)
+            pending_jobs = update_pending_jobs(pending_jobs, job_results)
+            print(job_results)
 
         # pause before next check
         time.sleep(10)
