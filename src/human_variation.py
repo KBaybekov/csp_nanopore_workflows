@@ -184,7 +184,7 @@ stages = ['converting', 'basecalling', 'aligning', 'sv_lookup', 'mod_lookup']
 
 # generate paths strings for subdirs in out_dir
 for d in directories.keys():
-    directories[d]['path'] = f'{os.path.join(out_dir, directories[d]['name'])}{os.sep}'
+    directories[d]['path'] = f'{os.path.join(out_dir, directories[d]["name"])}{os.sep}'
 
 # How many tasks should be run on one machine concurrently 
 tasks_per_machine_converting = '16'
