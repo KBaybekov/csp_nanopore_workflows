@@ -10,10 +10,11 @@ Usage: Usage: nanopore_preprocessing.py in_dir pod5_dir out_dir dorado_model thr
 import sys
 import os
 import time
+import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.common import get_dirs_in_dir, load_yaml
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
-from utils.slurm import is_slurm_job_running
+from utils.slurm import get_slurm_job_status
 
 
 def ch_d(d):
@@ -32,27 +33,24 @@ def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
     pending_jobs[sample][stage].extend(job_ids)
     job_results[sample][stage] = dict.fromkeys(job_ids, '')
 
-def generate_job_status_report(pending_jobs, job_results):
-    report = {}
-
+def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
+    print(timestamp)
     # check every sample in pending_jobs
     for sample, stages in pending_jobs.items():
-        report[sample] = {}
-
+        data2print = []
         # check every  stage in sample
         for stage, jobs in stages.items():
-            report[sample][stage] = {}
+            for job in jobs:
+                job_status = get_slurm_job_status(job_id=job)
+                job_results[sample][stage][job] = job_status
+                data2print.append(f'{job} ({job_status})')
+                if job_status == 'COMPLETED':
+                    pending_jobs[sample][stage].remove(job)
+            print(f'{stage.upper()}[{", ".join(data2print)}]', end='\t')
+        print()
 
-            # for each job_id retrieve status job_results
-            for job_id in jobs:
-                # Получаем статус из job_results и добавляем в отчет
-                status = job_results.get(sample, {}).get(stage, {}).get(job_id, 'Unknown')
-                report[sample][stage][job_id] = status
+    return (pending_jobs, job_results)
 
-    return report
-
-# 1.ОБНОВИТЬ ЛОГИКУ ПРОВЕРКИ СТАТУСА ЗАДАЧ СЛЕРМА
-# 2.ДОПИСАТЬ ПРОВЕРКУ СТАТУСОВ И ВЫДАЧИ РЕЗУЛЬТАТОВ
 def update_pending_jobs(pending_jobs, job_results):
     # check every sample in pending_jobs
     for sample, stages in pending_jobs.items():
@@ -107,7 +105,9 @@ def main():
             sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
-                                                                      ntasks=tasks_per_machine_converting))
+                                                                      ntasks=tasks_per_machine_converting,
+                                                                      exclude_nodes=exclude_node_cpu,
+                                                                      working_dir=working_dir))
 
             # Basecalling, aligning and mod lookup will be performed for each modification type in list          
             for mod_type in mod_bases:
@@ -117,6 +117,7 @@ def main():
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
                                                 mod_type=mod_type, model=dorado_model,
+                                                working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
                 
@@ -124,14 +125,14 @@ def main():
                 #CPU
                 job_id_aligning, bam = aligning(sample=sample, ubam=ubam, out_dir=directories['bam_dir']['path'],
                                            mod_type=mod_type, ref=dorado_model, threads=threads_per_align,
-                                           dependency=[job_id_basecalling], exclude_nodes=exclude_node_cpu)
+                                           dependency=[job_id_basecalling], working_dir=working_dir, exclude_nodes=exclude_node_cpu)
                 sample_job_ids['aligning'].append(job_id_aligning)
 
                 # mod lookup results will be stored in common dir of sample.
                 #CPU
                 sample_job_ids['mod_lookup'].append(modifications_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
                                                      mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
-                                                     threads=threads_per_calling_mod, dependency=[job_id_aligning],
+                                                     threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
             
             # SV calling will be performed just once with using of the first ready BAM 
@@ -140,7 +141,7 @@ def main():
             sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
                                                      mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
                                                      tr_bed=ref_tr_bed, threads=threads_per_calling_sv, dependency=sample_job_ids['aligning'],
-                                                     dependency_type='any', exclude_nodes=exclude_node_cpu))
+                                                     dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
             for stage, job_ids in sample_job_ids.items():
@@ -148,9 +149,8 @@ def main():
         
         # Check pending jobs
         elif pending_jobs:
-            job_results = generate_job_status_report(pending_jobs, job_results)
-            pending_jobs = update_pending_jobs(pending_jobs, job_results)
-            print(job_results)
+            now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+            pending_jobs, job_results = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, timestamp=now)
 
         # pause before next check
         time.sleep(10)
@@ -173,6 +173,9 @@ mod_bases = ['5mCG_5hmCG', '5mCG']
 # we don't want to use dgx10 for this time as CPU node
 exclude_node_cpu = ['dgx10']
 exclude_node_gpu = []
+
+# directory for running slurm jobs
+working_dir = '/common_share/tmp/slurm/'
 
 configs = f"{os.path.dirname(os.path.realpath(__file__).replace('src', 'configs'))}/"
 
