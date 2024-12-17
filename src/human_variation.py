@@ -158,7 +158,7 @@ def main():
     print("All samples processed.")
 
 if len(sys.argv) < 6:
-    raise SyntaxError(print('Usage: nanopore_preprocessing.py in_dir pod5_dir tmp_dir out_dir dorado_model threads'))
+    raise SyntaxError(print('Usage: human_variation.py in_dir pod5_dir tmp_dir out_dir dorado_model threads'))
 
 in_dir = f'{os.path.normpath(os.path.join(sys.argv[1]))}{os.sep}'
 pod5_dir = f'{os.path.normpath(os.path.join(sys.argv[2]))}{os.sep}'
