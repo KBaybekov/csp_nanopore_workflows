@@ -12,7 +12,7 @@ import os
 import time
 import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.common import get_dirs_in_dir, load_yaml
+from utils.common import get_dirs_in_dir, load_yaml, get_samples_in_dir_tree
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import get_slurm_job_status
 
@@ -155,7 +155,14 @@ def main():
         # pause before next check
         time.sleep(10)
 
-    print("All samples processed.")
+    print("All samples processed. Moving files to their folders...")
+    dir2search_in = directories['other_dir']['path']
+    for d in directories.keys():
+        extensions = tuple(directories[d]['extensions'])
+        d_path = directories[d]['path']
+        files2move = get_samples_in_dir_tree(dir=dir2search_in, extensions=extensions, empty_ok=True)
+        for f in files2move:
+            os.system(f'mv {f} {d_path}')
 
 if len(sys.argv) < 6:
     raise SyntaxError(print('Usage: human_variation.py in_dir pod5_dir tmp_dir out_dir dorado_model threads'))
