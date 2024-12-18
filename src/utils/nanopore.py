@@ -36,13 +36,14 @@ def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str,
     """
     job_ids = []
     pod5_dir = f'{os.path.join(out_dir, sample)}{os.sep}'
-    print('pod5_dir',pod5_dir)
+    #print('pod5_dir',pod5_dir)
     for idx, fast5_dir in enumerate(fast5_dirs):
         pod5_name = f"{idx}"
         command = f"pod5 convert fast5 {fast5_dir}*.fast5 --output {pod5_dir}/{pod5_name}.pod5 --threads {threads}"
         job_id = submit_slurm_job(command, partition="cpu_nodes",
                                   job_name=f"pod5_convert_{sample}_{pod5_name}",
                                   nodes=1, ntasks=ntasks, exclude_nodes=exclude_nodes, working_dir=working_dir)
+        print('job_id',job_id)
         job_ids.append(job_id)
     return job_ids
 
