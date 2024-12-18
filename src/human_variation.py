@@ -116,7 +116,7 @@ def main():
                                                                       ntasks=tasks_per_machine_converting,
                                                                       exclude_nodes=exclude_node_cpu,
                                                                       working_dir=working_dir))
-
+            print("sample_job_ids['converting']", sample_job_ids['converting'])
             # Basecalling, aligning and mod lookup will be performed for each modification type in list          
             for mod_type in mod_bases:
                 # basecalling results will be stored in ubam dir of sample.
