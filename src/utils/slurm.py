@@ -21,6 +21,7 @@ def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1,
         "nodes": nodes,
         "output": f"/tmp/{job_name}_%j.out"
     }
+    print(job)
     # Processing of optional params
     if working_dir:
         job["chdir"] = working_dir
