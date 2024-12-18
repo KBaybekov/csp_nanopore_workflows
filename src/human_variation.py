@@ -98,17 +98,17 @@ def main():
         # Choose sample
         if samples:
             sample_job_ids = dict.fromkeys(stages, [])
-            print('sample_job_ids', sample_job_ids)
+            #print('sample_job_ids', sample_job_ids)
             # pop sample from initial sample list
             sample = samples.pop(0)
-            print('sample', sample)
+            #print('sample', sample)
             pending_jobs = create_sample_sections_in_dict(target_dict=pending_jobs, sample=sample,
                                                           sections=stages, dict_type='job_listing')
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, dict_type='job_logging')
             fast5_dirs = sample_data[sample]
-            print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
-            exit()
+            #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
+            #exit()
             # Pulling converting task, one per job
             sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
