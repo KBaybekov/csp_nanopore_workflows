@@ -87,25 +87,26 @@ def main():
     sample_dirs = get_dirs_in_dir(dir=in_dir)
     # Create dict with sample_name:[sample_fast5s_dirs] as key:val
     sample_data = {os.path.basename(os.path.normpath(s)):get_fast5_dirs(dir=s) for s in sample_dirs}
-    print(sample_data)
+    #print(sample_data)
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-    print(samples)
+    #print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
-        print(3)
         # Choose sample
         if samples:
             sample_job_ids = dict.fromkeys(stages, [])
+            print('sample_job_ids', sample_job_ids)
             # pop sample from initial sample list
             sample = samples.pop(0)
+            print('sample', sample)
             pending_jobs = create_sample_sections_in_dict(target_dict=pending_jobs, sample=sample,
                                                           sections=stages, dict_type='job_listing')
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, dict_type='job_logging')
             fast5_dirs = sample_data[sample]
-            
+            print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
             # Pulling converting task, one per job
             sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
