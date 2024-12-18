@@ -92,11 +92,12 @@ def main():
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-    #print(samples)
+    print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
         # Choose sample
         if samples:
+            print(samples)
             sample_job_ids = dict.fromkeys(stages, [])
             #print('sample_job_ids', sample_job_ids)
             # pop sample from initial sample list
