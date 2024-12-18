@@ -164,7 +164,7 @@ def main():
         for f in files2move:
             os.system(f'mv {f} {d_path}')
 
-if len(sys.argv) < 6:
+if len(sys.argv) < 5:
     raise SyntaxError(print('Usage: human_variation.py in_dir out_dir dorado_model threads'))
 
 in_dir = f'{os.path.normpath(os.path.join(sys.argv[1]))}{os.sep}'
