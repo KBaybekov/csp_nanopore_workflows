@@ -77,8 +77,8 @@ def update_pending_jobs(pending_jobs, job_results):
     return pending_jobs
 
 def main():
-    pending_jobs = {}
-    job_results = {}
+    #pending_jobs = {}
+    #job_results = {}
 
     # create subdirs in dir
     for dir_data in directories.values():
