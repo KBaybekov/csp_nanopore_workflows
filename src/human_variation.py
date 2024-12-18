@@ -27,7 +27,8 @@ def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, 
         target_dict[sample].fromkeys(sections, [])
     elif dict_type == 'job_logging':
         target_dict[sample].fromkeys(sections, {})
-    #print()
+    else:
+        print('!')
     return target_dict
 
 def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
