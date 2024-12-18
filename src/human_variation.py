@@ -91,7 +91,7 @@ def main():
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-    print(2)
+    print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
         print(3)
