@@ -165,13 +165,12 @@ def main():
             os.system(f'mv {f} {d_path}')
 
 if len(sys.argv) < 6:
-    raise SyntaxError(print('Usage: human_variation.py in_dir pod5_dir tmp_dir out_dir dorado_model threads'))
+    raise SyntaxError(print('Usage: human_variation.py in_dir out_dir dorado_model threads'))
 
 in_dir = f'{os.path.normpath(os.path.join(sys.argv[1]))}{os.sep}'
-pod5_dir = f'{os.path.normpath(os.path.join(sys.argv[2]))}{os.sep}'
-out_dir = f'{os.path.normpath(os.path.join(sys.argv[4]))}{os.sep}'
-dorado_model = f'{os.path.normpath(os.path.join(sys.argv[5]))}{os.sep}'
-threads_per_machine = sys.argv[6]
+out_dir = f'{os.path.normpath(os.path.join(sys.argv[2]))}{os.sep}'
+dorado_model = f'{os.path.normpath(os.path.join(sys.argv[3]))}{os.sep}'
+threads_per_machine = sys.argv[4]
 
 ref_fasta = '/common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
 ref_tr_bed = '/common_share/nanopore_service_files/ref_files/human_GRCh38_no_alt_analysis_set.trf.bed'
