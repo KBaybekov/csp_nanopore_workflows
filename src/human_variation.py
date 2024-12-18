@@ -24,11 +24,10 @@ def ch_d(d):
 def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, dict_type:str) -> dict:
     target_dict.update({sample:{}})
     if dict_type == 'job_listing':
-        target_dict[sample].fromkeys(sections, [])
+        target_dict[sample] = target_dict[sample].fromkeys(sections, [])
     elif dict_type == 'job_logging':
-        target_dict[sample].fromkeys(sections, {})
-    else:
-        print('!')
+        target_dict[sample] = target_dict[sample].fromkeys(sections, {})
+    #print()
     return target_dict
 
 def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
