@@ -22,11 +22,12 @@ def ch_d(d):
     exit()
 
 def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, dict_type:str) -> dict:
-    target_dict[sample] = {}
+    target_dict.update({sample:{}})
     if dict_type == 'job_listing':
         target_dict[sample].fromkeys(sections, [])
     elif dict_type == 'job_logging':
         target_dict[sample].fromkeys(sections, {})
+    #print()
     return target_dict
 
 def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
@@ -107,6 +108,7 @@ def main():
                                                           sections=stages, dict_type='job_logging')
             fast5_dirs = sample_data[sample]
             print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
+            exit()
             # Pulling converting task, one per job
             sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
