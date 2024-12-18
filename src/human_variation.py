@@ -80,7 +80,6 @@ def main():
     pending_jobs = {}
     job_results = {}
 
-    print(1)
     # create subdirs in dir
     for dir_data in directories.values():
         os.makedirs(dir_data['path'], exist_ok=True) 
@@ -88,6 +87,7 @@ def main():
     sample_dirs = get_dirs_in_dir(dir=in_dir)
     # Create dict with sample_name:[sample_fast5s_dirs] as key:val
     sample_data = {os.path.basename(os.path.normpath(s)):get_fast5_dirs(dir=s) for s in sample_dirs}
+    print(sample_data)
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
