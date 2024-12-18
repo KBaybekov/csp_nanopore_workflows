@@ -80,6 +80,7 @@ def main():
     pending_jobs = {}
     job_results = {}
 
+    print(1)
     # create subdirs in dir
     for dir_data in directories.values():
         os.makedirs(dir_data['path'], exist_ok=True) 
@@ -90,9 +91,10 @@ def main():
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-        
+    print(2)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
+        print(3)
         # Choose sample
         if samples:
             sample_job_ids = dict.fromkeys(stages, [])
