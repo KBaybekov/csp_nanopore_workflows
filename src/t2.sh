@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=myarrayjob
-#SBATCH --ntasks=1
+#SBATCH --ntasks=5
 #SBATCH --nodes=5
 #SBATCH --partition=cpu_nodes
 #SBATCH --cpus-per-task=1
