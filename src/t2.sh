@@ -5,7 +5,7 @@
 #SBATCH --array=1-10
 
 # Specify the path to the config file
-config=/path/to/config.txt
+config=/common_share/github/csp_nanopore_workflows/configs/t.txt
 
 # Extract the sample name for the current $SLURM_ARRAY_TASK_ID
 sample=$(awk -v ArrayTaskID=$SLURM_ARRAY_TASK_ID '$1==ArrayTaskID {print $2}' $config)
