@@ -1,6 +1,7 @@
 import os
 import sys
-from src.utils.common import run_shell_cmd
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.common import run_shell_cmd
 
 command = 'echo "$PWD, $(hostname) started" && sleep 120 && echo "$(hostname) finished!"'
 working_dir = sys.argv[1]
