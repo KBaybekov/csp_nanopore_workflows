@@ -21,18 +21,13 @@ def ch_d(d):
     print(d)
     exit()
 
-def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, dict_type:str) -> dict:
-    target_dict.update({sample:{}})
-    if dict_type == 'job_listing':
-        target_dict[sample] = target_dict[sample].fromkeys(sections, [])
-    elif dict_type == 'job_logging':
-        target_dict[sample] = target_dict[sample].fromkeys(sections, {})
-    #print()
+def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, val) -> dict:
+    target_dict.update({sample:{section:val for section in sections}})
     return target_dict
 
 def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
     pending_jobs[sample][stage].extend(job_ids)
-    job_results[sample][stage] = dict.fromkeys(job_ids, '')
+    job_results[sample][stage].update({id:'' for id in job_ids})
 
 def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
     print(timestamp)
@@ -100,6 +95,8 @@ def main():
             sample_job_ids = {}
             for stage in stages:
                 sample_job_ids[stage] = []
+
+            #SHIT IN STRING BELOW CREATES [] JUST ONCE, NEXT VALS WILL BE JUST LINKS. IF U CHANGE 1 VAL, U CHANGE ALL   
             #sample_job_ids = dict.fromkeys(stages, [])
             
             #print('sample_job_ids', sample_job_ids)
@@ -107,20 +104,20 @@ def main():
             sample = samples.pop(0)
             #print('sample', sample)
             pending_jobs = create_sample_sections_in_dict(target_dict=pending_jobs, sample=sample,
-                                                          sections=stages, dict_type='job_listing')
+                                                          sections=stages, val=[])
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
-                                                          sections=stages, dict_type='job_logging')
+                                                          sections=stages, val={})
             fast5_dirs = sample_data[sample]
             #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
             #exit()
             # Pulling converting task, one per job
             #print(sample_job_ids)
-            sample_job_ids.update({'converting':convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
+            sample_job_ids['converting'] = convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
                                                                       ntasks=tasks_per_machine_converting,
                                                                       exclude_nodes=exclude_node_cpu,
-                                                                      working_dir=working_dir)})
+                                                                      working_dir=working_dir)
             
             
             #print("sample_job_ids['converting']", sample_job_ids['converting'])
@@ -136,8 +133,6 @@ def main():
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
-                print(sample_job_ids)
-
                 #print('job_id_basecalling', job_id_basecalling)
                 #print(job_id_basecalling, ubam, sample_job_ids['basecalling'])
                 
@@ -156,7 +151,7 @@ def main():
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
 
-                #print(sample_job_ids)
+            print(sample_job_ids)
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
             # SV calling will be performed just once with using of the first ready BAM 
