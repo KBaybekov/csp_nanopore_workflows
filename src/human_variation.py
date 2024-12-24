@@ -33,13 +33,18 @@ def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job
 
 def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
     print(timestamp)
+    jobs_data = get_slurm_job_status()
     # check every sample in pending_jobs
     for sample, stages in pending_jobs.items():
         data2print = []
         # check every  stage in sample
         for stage, jobs in stages.items():
             for job in jobs:
-                job_status = get_slurm_job_status(job_id=job)
+                # check for job in slurmd; if not found return not found info
+                job_status = jobs_data.get(int(job), 'JOB NOT FOUND')
+                # if job is found, check for its status
+                if isinstance(job_status, dict):
+                    job_status = job_status.get('job_state', 'UNKNOWN_STATE')
                 job_results[sample][stage][job] = job_status
                 data2print.append(f'{job} ({job_status})')
                 if job_status == 'COMPLETED':

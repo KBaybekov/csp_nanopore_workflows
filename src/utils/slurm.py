@@ -70,21 +70,11 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
     print(f'Job ID for {job_name}: {job_id}')
     return job_id.removesuffix('\n')
 
-def get_slurm_job_status(job_id:str):
+def get_slurm_job_status() -> dict:
     """Проверка статуса задачи через pyslurm"""
-    job_info = pyslurm.job().get().copy()
-    print(job_info[int(job_id)])
-    exit()
-    try:
-        job_info = pyslurm.job().find_id(int(job_id))
-    except TypeError:
-        print(int(job_id))
-        exit()
-    if job_info:
-        state = job_info.get('job_state', 'UNKNOWN')
-        #print(f"Job {job_id} state: {state}")
-        return state
-    return 'JOB NOT FOUND'
+    job_data = pyslurm.job().get().copy()
+    return job_data
+    
 
 def get_idle_nodes(partition_name:str) -> list:
     """Получение списка простаивающих узлов"""
