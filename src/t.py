@@ -2,7 +2,7 @@ import os
 import sys
 import subprocess
 
-command = 'echo "$PWD, $(hostname) started" && sleep 10 && echo "$(hostname) finished!"'
+command = 'echo "$PWD, $(hostname) started" && sleep 120 && echo "$(hostname) finished!"'
 working_dir = sys.argv[1]
 job_name = sys.argv[2]
 partition = sys.argv[3]
