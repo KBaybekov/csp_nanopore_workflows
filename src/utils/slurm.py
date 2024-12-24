@@ -71,7 +71,7 @@ def get_slurm_job_status(job_id:str):
     try:
         job_info = pyslurm.job().find_id(int(job_id))
     except TypeError:
-        print(job_id)
+        print(int(job_id))
         exit()
     if job_info:
         state = job_info.get('job_state', 'UNKNOWN')
