@@ -3,7 +3,7 @@ import os
 from src.utils.common import run_shell_cmd
 
 def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
-                     cpus_per_task:str='', ntasks:int=1, dependency:list=None, dependency_type:str='all',
+                     cpus_per_task:int=None, ntasks:int=1, dependency:list=None, dependency_type:str='all',
                      exclude_nodes:list=[]) ->str :
     """Отправка задачи в SLURM
     :param command: команда для CLI
@@ -21,6 +21,8 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
         raise ValueError('Work dir not specified')
     elif not job_name:
         raise ValueError('Job name not specified')
+    if cpus_per_task:
+        mem = cpus_per_task*8
 
     slurm_script = ['#!/bin/bash\n']
     slurm_script_file = os.path.join(working_dir, f'{job_name}.sh')
@@ -31,6 +33,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
             'nodes':str(nodes),
             'ntasks':str(ntasks),
             'cpus-per-task':str(cpus_per_task),
+            'mem':str(mem),
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,
