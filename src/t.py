@@ -65,4 +65,4 @@ job_id, stderr = result.communicate(timeout=60)
 
 
 #job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
-print(job_id)
+print(job_id, job_id, job_id)
