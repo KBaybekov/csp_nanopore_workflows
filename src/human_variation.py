@@ -104,10 +104,10 @@ def main():
             #print('sample', sample)
             pending_jobs = create_sample_sections_in_dict(target_dict=pending_jobs, sample=sample,
                                                           sections=stages, dict_type='job_listing')
-            print(pending_jobs)
-            exit()
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, dict_type='job_logging')
+            print(job_results)
+            exit()
             fast5_dirs = sample_data[sample]
             #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
             #exit()
