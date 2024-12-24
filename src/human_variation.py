@@ -168,7 +168,7 @@ def main():
                 store_job_ids(pending_jobs=pending_jobs, job_results=job_results,
                               sample=sample, stage=stage, job_ids=job_ids)            
             
-            print(pending_jobs)
+            print(job_results)
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
         # Check pending jobs
