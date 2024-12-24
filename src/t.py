@@ -10,7 +10,7 @@ nodes = sys.argv[4]
 #dependency = sys.argv[5]
 ntasks = sys.argv[6]
 #exclude_nodes = sys.argv[7]
-dependency = '116'
+#dependency = '116'
 exclude_nodes = ''
 dependency_type = 'all'
 
@@ -39,11 +39,12 @@ for opt,val in opts.items():
     if opt != 'command':
         if val:
             if opt == 'dependency':
+                val = val.split(',')
                 if dependency_type == 'all':
                     delimiter = ':'
                 elif dependency_type == 'any':
                     delimiter = '?'
-                val = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
+                val = f"afterok:{f'{delimiter}'.join(map(str, val))}"
             
             slurm_script.append(option_str.format(opt, val))
     else:
