@@ -121,6 +121,7 @@ def main():
             for mod_type in mod_bases:
                 # basecalling results will be stored in ubam dir of sample.
                 #GPU
+                print(sample_job_ids['basecalling'])
                 job_id_basecalling, ubam = basecalling(sample=sample,
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
