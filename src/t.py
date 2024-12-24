@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 
 command = 'echo "$PWD, $(hostname) started" && sleep 10 && echo "$(hostname) finished!"'
 working_dir = sys.argv[1]
@@ -21,7 +22,7 @@ elif not working_dir:
 elif not job_name:
     raise ValueError('Job name not specified')
 
-slurm_script = ['#!/bin/bash']
+slurm_script = ['#!/bin/bash\n']
 slurm_script_file = os.path.join(working_dir, f'{job_name}.sh')
 option_str = '#SBATCH --{}={}'
 
@@ -53,5 +54,6 @@ with open(slurm_script_file, 'w') as s:
     s.write('\n'.join(slurm_script))
 
 os.system(f'sbatch {slurm_script_file}')
-job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
+job_id = subprocess.run(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'", shell=True).stdout
+#job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
 print(job_id, type(job_id))
