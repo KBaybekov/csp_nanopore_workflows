@@ -43,7 +43,6 @@ def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str,
         job_id = submit_slurm_job(command, partition="cpu_nodes",
                                   job_name=f"pod5_convert_{sample}_{pod5_name}",
                                   nodes=1, ntasks=ntasks, exclude_nodes=exclude_nodes, working_dir=working_dir)
-        print('job_id',job_id)
         job_ids.append(job_id)
     return job_ids
 
