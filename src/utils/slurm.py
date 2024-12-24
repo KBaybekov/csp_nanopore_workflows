@@ -3,7 +3,7 @@ import os
 from src.utils.common import run_shell_cmd
 
 def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
-                     cpus_per_task:int=None, ntasks:int=1, dependency:list=None, dependency_type:str='all',
+                     cpus_per_task:str='', ntasks:int=1, dependency:list=None, dependency_type:str='all',
                      exclude_nodes:list=[]) ->str :
     """Отправка задачи в SLURM
     :param command: команда для CLI
@@ -22,7 +22,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
     elif not job_name:
         raise ValueError('Job name not specified')
     if cpus_per_task:
-        mem = cpus_per_task*8
+        mem = int(cpus_per_task)*8
     else:
         mem = ''
 
