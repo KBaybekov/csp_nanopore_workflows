@@ -23,6 +23,8 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
         raise ValueError('Job name not specified')
     if cpus_per_task:
         mem = cpus_per_task*8
+    else:
+        mem = ''
 
     slurm_script = ['#!/bin/bash\n']
     slurm_script_file = os.path.join(working_dir, f'{job_name}.sh')
@@ -33,7 +35,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
             'nodes':str(nodes),
             'ntasks':str(ntasks),
             'cpus-per-task':str(cpus_per_task),
-            'mem':f'{str(mem)}G',
+            'mem':mem,
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,
@@ -50,7 +52,8 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
                     val = f"afterok:{f'{delimiter}'.join(dependency)}"
                 if opt == 'exclude':
                     val = ','.join(exclude_nodes)
-                
+                if opt == 'mem':
+                    val = f'{str(mem)}G'
                 slurm_script.append(option_str.format(opt, val))
         else:
             slurm_script.extend(['\n', val])
