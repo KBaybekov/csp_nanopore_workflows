@@ -132,6 +132,7 @@ def main():
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
+                print('job_id_basecalling', job_id_basecalling)
                 #print(job_id_basecalling, ubam, sample_job_ids['basecalling'])
                 
                 # Alignment results will be stored in bam dir of sample.
@@ -140,6 +141,7 @@ def main():
                                            mod_type=mod_type, ref=dorado_model, threads=threads_per_align,
                                            dependency=[job_id_basecalling], working_dir=working_dir, exclude_nodes=exclude_node_cpu)
                 sample_job_ids['aligning'].append(job_id_aligning)
+                print('job_id_aligning', job_id_aligning)
 
                 # mod lookup results will be stored in common dir of sample.
                 #CPU
@@ -147,7 +149,7 @@ def main():
                                                      mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
-            
+                
                 print(sample_job_ids)
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
