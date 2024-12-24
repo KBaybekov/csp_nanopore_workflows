@@ -10,7 +10,7 @@ nodes = sys.argv[4]
 #dependency = sys.argv[5]
 ntasks = sys.argv[6]
 #exclude_nodes = sys.argv[7]
-dependency = ''
+dependency = '118'
 exclude_nodes = ''
 dependency_type = 'all'
 
