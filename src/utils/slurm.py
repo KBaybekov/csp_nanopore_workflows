@@ -1,8 +1,9 @@
 import pyslurm
+import os
 
-def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1,
+def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
                      ntasks:int=1, dependency:list=None, dependency_type:str='all',
-                     exclude_nodes:list=[], working_dir:str=''):
+                     exclude_nodes:list=[]):
     """Отправка задачи в SLURM
     :param command: команда для CLI
     :param job_name: наименование задачи
@@ -13,29 +14,47 @@ def submit_slurm_job(command:str, job_name:str, partition:str, nodes:int=1,
     :param dependency_type: тип зависимости от задач - должны быть успешно выполнены все либо любая из задач ('all','any')
     :return: id задачи Slurm
     """
-    job = {
-        "job_name": job_name,
-        "partition": partition,
-        "command": command,
-        "ntasks": ntasks,
-        "nodes": nodes,
-        "output": f"/tmp/{job_name}_%j.out"
-    }
-    #print(job)
-    # Processing of optional params
-    if working_dir:
-        job["chdir"] = working_dir
-    if exclude_nodes:
-        job["exclude"] = f"{','.join(exclude_nodes)}"
-    if dependency:
-        if dependency_type == 'all':
-            delimiter = ':'
-        elif dependency_type == 'any':
-            delimiter = '?'
-        job["dependency"] = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
+    if not command:
+        raise ValueError('Empty CMD for sbatch script')
+    elif not working_dir:
+        raise ValueError('Work dir not specified')
+    elif not job_name:
+        raise ValueError('Job name not specified')
 
-    job_id = pyslurm.job().submit_batch_job(job)
-    print(f"Job {job_name} submitted with ID {job_id}")
+    slurm_script = ['#!/bin/bash']
+    slurm_script_file = os.path.join(working_dir, f'{job_name}.sh')
+    option_str = '#SBATCH --{}={}'
+
+    opts = {'job-name':job_name,
+            'partition':partition,
+            'nodes':nodes,
+            'ntasks':ntasks,
+            'dependency':dependency,
+            'exclude':exclude_nodes,
+            'chdir':working_dir,
+            'command':command}    
+
+    for opt,val in opts.items():
+        if opt != 'command':
+            if val:
+                if opt == 'dependency':
+                    if dependency_type == 'all':
+                        delimiter = ':'
+                    elif dependency_type == 'any':
+                        delimiter = '?'
+                    val = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
+                if opt == 'exclude':
+                    val = ','.join(exclude_nodes)
+                
+                slurm_script.append(option_str.format(opt, val))
+        else:
+            slurm_script.extend(['\n', val])
+
+    with open(slurm_script_file, 'w') as s:
+        s.write('\n'.join(slurm_script))
+
+    os.system(f'sbatch {slurm_script_file}')
+    job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
     return job_id
 
 def get_slurm_job_status(job_id:str):
