@@ -53,8 +53,16 @@ for opt,val in opts.items():
 with open(slurm_script_file, 'w') as s:
     s.write('\n'.join(slurm_script))
 
+
 os.system(f'sbatch {slurm_script_file}')
-job_id = subprocess.run(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'", shell=True,
-                        capture_output=True, text=True).stderr
+cmd = f"squeue -n {job_name} | tail -1| awk '{{print $1}}'"
+#job_id = subprocess.run(, shell=True,
+#                        capture_output=True, text=True).stderr
+
+result = subprocess.Popen(args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True, executable="/bin/bash", bufsize=1, cwd=None, env=None)
+job_id, stderr = result.communicate(timeout=60)
+
+
 #job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
 print(job_id)
