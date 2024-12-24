@@ -54,6 +54,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
                     val = ','.join(exclude_nodes)
                 if opt == 'mem':
                     val = f'{str(mem)}G'
+                    print(val)
                 slurm_script.append(option_str.format(opt, val))
         else:
             slurm_script.extend(['\n', val])
