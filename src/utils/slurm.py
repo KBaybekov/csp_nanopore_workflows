@@ -1,5 +1,6 @@
 import pyslurm
 import os
+from src.utils.common import run_shell_cmd
 
 def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
                      ntasks:int=1, dependency:list=None, dependency_type:str='all',
@@ -21,7 +22,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
     elif not job_name:
         raise ValueError('Job name not specified')
 
-    slurm_script = ['#!/bin/bash']
+    slurm_script = ['#!/bin/bash\n']
     slurm_script_file = os.path.join(working_dir, f'{job_name}.sh')
     option_str = '#SBATCH --{}={}'
 
@@ -42,7 +43,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
                         delimiter = ':'
                     elif dependency_type == 'any':
                         delimiter = '?'
-                    val = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
+                    val = f"afterok:{f'{delimiter}'.join(dependency)}"
                 if opt == 'exclude':
                     val = ','.join(exclude_nodes)
                 
@@ -54,7 +55,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
         s.write('\n'.join(slurm_script))
 
     os.system(f'sbatch {slurm_script_file}')
-    job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
+    job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
     return job_id
 
 def get_slurm_job_status(job_id:str):

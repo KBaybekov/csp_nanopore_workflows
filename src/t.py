@@ -1,6 +1,6 @@
 import os
 import sys
-import subprocess
+from src.utils.common import run_shell_cmd
 
 command = 'echo "$PWD, $(hostname) started" && sleep 120 && echo "$(hostname) finished!"'
 working_dir = sys.argv[1]
@@ -10,7 +10,7 @@ nodes = sys.argv[4]
 #dependency = sys.argv[5]
 ntasks = sys.argv[6]
 #exclude_nodes = sys.argv[7]
-dependency = '118'
+dependency = ''
 exclude_nodes = ''
 dependency_type = 'all'
 
@@ -59,10 +59,7 @@ os.system(f'sbatch {slurm_script_file}')
 cmd = f"squeue -n {job_name} | tail -1| awk '{{print $1}}'"
 #job_id = subprocess.run(, shell=True,
 #                        capture_output=True, text=True).stderr
-
-result = subprocess.Popen(args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                universal_newlines=True, executable="/bin/bash", bufsize=1, cwd=None, env=None)
-job_id, stderr = result.communicate(timeout=60)
+job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
 job_id = job_id.removesuffix('\n')
 
 #job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")

@@ -1,5 +1,6 @@
 import os
 import yaml
+import subprocess
 
 def get_samples_in_dir(dir:str, extensions:tuple, empty_ok:bool=False):
     """
@@ -82,3 +83,9 @@ def load_yaml(file_path:str, critical:bool = False, subsection:str = ''):
         if critical:
             raise FileNotFoundError(f"Не найден: {file_path}")
         return {}
+    
+def run_shell_cmd(cmd:str, timeout:int=None) -> tuple:
+    result = subprocess.Popen(args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                universal_newlines=True, executable="/bin/bash", bufsize=1, cwd=None, env=None)
+    stdout, stderr = result.communicate(timeout=timeout)
+    return (stdout, stderr)
