@@ -148,7 +148,7 @@ def main():
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
             
-            print(sample_job_ids)
+                print(sample_job_ids)
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
             # SV calling will be performed just once with using of the first ready BAM 
