@@ -26,6 +26,8 @@ def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, 
     return target_dict
 
 def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
+    print('pending_jobs', pending_jobs)
+    print('job_results', job_results)
     pending_jobs[sample][stage].extend(job_ids)
     job_results[sample][stage].update({id:'' for id in job_ids})
 
@@ -160,8 +162,8 @@ def main():
                                                      dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
-            print('pending_jobs', pending_jobs)
-            print('job_results', job_results)
+            #print('pending_jobs', pending_jobs)
+            #print('job_results', job_results)
             for stage, job_ids in sample_job_ids.items():
                 print(sample)
                 store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
