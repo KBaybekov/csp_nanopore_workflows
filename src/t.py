@@ -1,7 +1,7 @@
 import os
 import sys
 
-command = 'echo "$(hostname) started" && sleep 10 && echo "$(hostname) finished!"'
+command = 'echo "$PWD, $(hostname) started" && sleep 10 && echo "$(hostname) finished!"'
 working_dir = sys.argv[2]
 job_name = sys.argv[3]
 partition = sys.argv[4]
