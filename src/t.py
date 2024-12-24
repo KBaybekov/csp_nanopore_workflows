@@ -55,6 +55,6 @@ with open(slurm_script_file, 'w') as s:
 
 os.system(f'sbatch {slurm_script_file}')
 job_id = subprocess.run(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'", shell=True,
-                        stdout=subprocess.PIPE).stdout.decode()
+                        stdout=subprocess.PIPE).stdout.decode('utf-8')
 #job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
 print(job_id, type(job_id))
