@@ -3,7 +3,7 @@ import os
 from src.utils.common import run_shell_cmd
 
 def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
-                     ntasks:int=1, dependency:list=None, dependency_type:str='all',
+                     cpus_per_task:str='', ntasks:int=1, dependency:list=None, dependency_type:str='all',
                      exclude_nodes:list=[]) ->str :
     """Отправка задачи в SLURM
     :param command: команда для CLI
@@ -28,8 +28,9 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
 
     opts = {'job-name':job_name,
             'partition':partition,
-            'nodes':nodes,
-            'ntasks':ntasks,
+            'nodes':str(nodes),
+            'ntasks':str(ntasks),
+            'cpus-per-task':str(cpus_per_task),
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,
@@ -59,7 +60,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
         print(slurm_stderr)
 
     job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
-    #print(f'Job ID for {job_name}: {job_id}')
+    print(f'Job ID for {job_name}: {job_id}')
     return job_id.removesuffix('\n')
 
 def get_slurm_job_status(job_id:str):
