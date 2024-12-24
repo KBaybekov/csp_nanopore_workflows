@@ -6,10 +6,12 @@ working_dir = sys.argv[1]
 job_name = sys.argv[2]
 partition = sys.argv[3]
 nodes = sys.argv[4]
-dependency = sys.argv[5]
+#dependency = sys.argv[5]
 ntasks = sys.argv[6]
-exclude_nodes = sys.argv[7]
-dependency_type = sys.argv[8]
+#exclude_nodes = sys.argv[7]
+dependency = ''
+exclude_nodes = ''
+dependency_type = 'all'
 
 
 if not command:
@@ -41,8 +43,6 @@ for opt,val in opts.items():
                 elif dependency_type == 'any':
                     delimiter = '?'
                 val = f"afterok:{f'{delimiter}'.join(map(str, dependency))}"
-            if opt == 'exclude':
-                val = ','.join(exclude_nodes)
             
             slurm_script.append(option_str.format(opt, val))
     else:
