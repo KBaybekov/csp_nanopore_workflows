@@ -110,7 +110,7 @@ def main():
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, val={})
             fast5_dirs = sample_data[sample]
-            #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
+            print('pending_jobs', pending_jobs, 'job_results', job_results)
             #exit()
             # Pulling converting task, one per job
             #print(sample_job_ids)
