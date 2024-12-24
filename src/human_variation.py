@@ -110,28 +110,21 @@ def main():
             #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
             #exit()
             # Pulling converting task, one per job
-            print(sample_job_ids)
+            #print(sample_job_ids)
             sample_job_ids.update({'converting':convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
                                                                       ntasks=tasks_per_machine_converting,
                                                                       exclude_nodes=exclude_node_cpu,
                                                                       working_dir=working_dir)})
-            """sample_job_ids['converting'].extend(convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
-                                                                      out_dir=directories['pod5_dir']['path'],
-                                                                      threads=threads_per_converting,
-                                                                      ntasks=tasks_per_machine_converting,
-                                                                      exclude_nodes=exclude_node_cpu,
-                                                                      working_dir=working_dir))"""
-            print(sample_job_ids)
-            os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
-            exit()
+            
+            
             #print("sample_job_ids['converting']", sample_job_ids['converting'])
             # Basecalling, aligning and mod lookup will be performed for each modification type in list          
             for mod_type in mod_bases:
                 # basecalling results will be stored in ubam dir of sample.
                 #GPU
-                print(sample_job_ids['basecalling'])
+                #print(sample_job_ids['basecalling'])
                 job_id_basecalling, ubam = basecalling(sample=sample,
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
@@ -139,7 +132,7 @@ def main():
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
-                print(job_id_basecalling, ubam, sample_job_ids['basecalling'])
+                #print(job_id_basecalling, ubam, sample_job_ids['basecalling'])
                 
                 # Alignment results will be stored in bam dir of sample.
                 #CPU
@@ -155,6 +148,9 @@ def main():
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
             
+            print(sample_job_ids)
+            os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
+            exit()
             # SV calling will be performed just once with using of the first ready BAM 
             # SV lookup results will be stored in common dir of sample.
             #CPU
