@@ -160,10 +160,11 @@ def main():
                                                      dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
-            for stage, job_ids in sample_job_ids.items():
-                store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
             print('pending_jobs', pending_jobs)
             print('job_results', job_results)
+            for stage, job_ids in sample_job_ids.items():
+                store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
+            
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
         # Check pending jobs
