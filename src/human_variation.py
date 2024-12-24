@@ -151,9 +151,6 @@ def main():
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
                                                      exclude_nodes=exclude_node_cpu))
 
-            print(sample_job_ids)
-            os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
-            exit()
             # SV calling will be performed just once with using of the first ready BAM 
             # SV lookup results will be stored in common dir of sample.
             #CPU
@@ -163,11 +160,12 @@ def main():
                                                      dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
-            print(sample_job_ids)
-            exit()
             for stage, job_ids in sample_job_ids.items():
                 store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
-        
+            print('pending_jobs', pending_jobs)
+            print('job_results', job_results)
+            os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
+            exit()
         # Check pending jobs
         elif pending_jobs:
             now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
