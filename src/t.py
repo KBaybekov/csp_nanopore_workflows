@@ -62,7 +62,7 @@ cmd = f"squeue -n {job_name} | tail -1| awk '{{print $1}}'"
 result = subprocess.Popen(args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 universal_newlines=True, executable="/bin/bash", bufsize=1, cwd=None, env=None)
 job_id, stderr = result.communicate(timeout=60)
-
+job_id = job_id.removesuffix('\n')
 
 #job_id = os.system(f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
 print(job_id, job_id, job_id)
