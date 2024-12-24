@@ -24,7 +24,7 @@ def get_fast5_dirs(dir:str) -> list:
         raise FileNotFoundError('FAST5 файлы не найдены!')
     return list(set(fast5s))
 
-def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, ntasks:int, exclude_nodes:list=[], working_dir:str=''):
+def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, ntasks:int, exclude_nodes:list=[], working_dir:str='') ->list :
     """
     Запуск задачи конвертации fast5 -> pod5 на CPU. Задача выполняется на одной ЦПУ ноде
     :param fast5_dirs: папки с файлами для конвертации
