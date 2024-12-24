@@ -106,8 +106,6 @@ def main():
                                                           sections=stages, dict_type='job_listing')
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, dict_type='job_logging')
-            print(job_results)
-            exit()
             fast5_dirs = sample_data[sample]
             #print('pending_jobs', pending_jobs, 'job_results', job_results, 'fast5_dirs', fast5_dirs, )
             #exit()
@@ -154,6 +152,8 @@ def main():
                                                      dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
+            print(sample_job_ids)
+            exit()
             for stage, job_ids in sample_job_ids.items():
                 store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
         
