@@ -22,9 +22,7 @@ def ch_d(d):
     exit()
 
 def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, val) -> dict:
-    target_dict[sample] = {}
-    for section in sections:
-        target_dict[sample][section] = val
+    target_dict.update({sample:{section:val.copy() for section in sections}})
     return target_dict
 
 def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job_ids:list) -> None:
