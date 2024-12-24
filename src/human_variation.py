@@ -26,8 +26,8 @@ def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, 
     return target_dict
 
 def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job_ids:list) -> None:
-    print('pending_jobs', pending_jobs)
-    print('job_results', job_results)
+    #print('pending_jobs', pending_jobs)
+    #print('job_results', job_results)
     pending_jobs[sample][stage].extend(job_ids)
     job_results[sample][stage].update({id:'' for id in job_ids})
 
@@ -110,7 +110,7 @@ def main():
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, val={})
             fast5_dirs = sample_data[sample]
-            print('pending_jobs', pending_jobs, 'job_results', job_results)
+            #print('pending_jobs', pending_jobs, 'job_results', job_results)
             #exit()
             # Pulling converting task, one per job
             #print(sample_job_ids)
