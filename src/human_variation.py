@@ -29,7 +29,6 @@ def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job
     #print('pending_jobs', pending_jobs)
     #print('job_results', job_results)
     pending_jobs[sample][stage].extend(job_ids)
-    print(pending_jobs)
     job_results[sample][stage].update({id:'' for id in job_ids})
 
 def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
@@ -170,8 +169,8 @@ def main():
                               sample=sample, stage=stage, job_ids=job_ids)            
             
             #print(job_results)
-            os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
-            exit()
+            #os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
+            #exit()
         # Check pending jobs
         elif pending_jobs:
             now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
