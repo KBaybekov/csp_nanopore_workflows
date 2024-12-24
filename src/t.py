@@ -2,14 +2,14 @@ import os
 import sys
 
 command = 'echo "$PWD, $(hostname) started" && sleep 10 && echo "$(hostname) finished!"'
-working_dir = sys.argv[2]
-job_name = sys.argv[3]
-partition = sys.argv[4]
-nodes = sys.argv[5]
-dependency = sys.argv[6]
-ntasks = sys.argv[7]
-exclude_nodes = sys.argv[8]
-dependency_type = sys.argv[9]
+working_dir = sys.argv[1]
+job_name = sys.argv[2]
+partition = sys.argv[3]
+nodes = sys.argv[4]
+dependency = sys.argv[5]
+ntasks = sys.argv[6]
+exclude_nodes = sys.argv[7]
+dependency_type = sys.argv[8]
 
 
 if not command:
