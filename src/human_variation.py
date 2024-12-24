@@ -25,7 +25,7 @@ def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, 
     target_dict.update({sample:{section:val for section in sections}})
     return target_dict
 
-def store_job_ids(sample:str, stage:str, job_ids:list) -> None:
+def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job_ids:list) -> None:
     print('pending_jobs', pending_jobs)
     print('job_results', job_results)
     pending_jobs[sample][stage].extend(job_ids)
@@ -166,7 +166,8 @@ def main():
             #print('job_results', job_results)
             for stage, job_ids in sample_job_ids.items():
                 print(sample)
-                store_job_ids(sample=sample, stage=stage, job_ids=job_ids)            
+                store_job_ids(pending_jobs=pending_jobs, job_results=job_results,
+                              sample=sample, stage=stage, job_ids=job_ids)            
             
             os.system('scancel -u kbajbekov && rm -rf /common_share/tmp/slurm/*')
             exit()
