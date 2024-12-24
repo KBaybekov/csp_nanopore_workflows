@@ -72,7 +72,8 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
 
 def get_slurm_job_status(job_id:str):
     """Проверка статуса задачи через pyslurm"""
-    print(pyslurm.job().get())
+    print(pyslurm.job().get()[job_id])
+    exit()
     try:
         job_info = pyslurm.job().find_id(int(job_id))
     except TypeError:
