@@ -4,7 +4,7 @@ from src.utils.common import run_shell_cmd
 
 def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
                      ntasks:int=1, dependency:list=None, dependency_type:str='all',
-                     exclude_nodes:list=[]):
+                     exclude_nodes:list=[]) ->str :
     """Отправка задачи в SLURM
     :param command: команда для CLI
     :param job_name: наименование задачи
@@ -56,7 +56,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
 
     os.system(f'sbatch {slurm_script_file}')
     job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
-    return job_id
+    return job_id.removesuffix('\n')
 
 def get_slurm_job_status(job_id:str):
     """Проверка статуса задачи через pyslurm"""

@@ -18,7 +18,7 @@ def get_fast5_dirs(dir:str) -> list:
         for root, _ds, fs in os.walk(subdir):
             for f in fs:
                 if f.endswith('.fast5') and os.path.basename(root) == 'fast5_pass':
-                    fast5s.append(os.path.join(root))
+                    fast5s.append(f'{os.path.join(root)}{os.sep}')
 
     if not fast5s:
         raise FileNotFoundError('FAST5 файлы не найдены!')
