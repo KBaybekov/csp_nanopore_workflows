@@ -53,9 +53,13 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
 
     with open(slurm_script_file, 'w') as s:
         s.write('\n'.join(slurm_script))
+    slurm_stdout, slurm_stderr = run_shell_cmd(cmd=f"sbatch {slurm_script_file}")
 
-    os.system(f'sbatch {slurm_script_file}')
+    if slurm_stderr:
+        print(slurm_stderr)
+
     job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
+    #print(f'Job ID for {job_name}: {job_id}')
     return job_id.removesuffix('\n')
 
 def get_slurm_job_status(job_id:str):
