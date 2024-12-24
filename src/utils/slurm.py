@@ -33,7 +33,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
             'nodes':str(nodes),
             'ntasks':str(ntasks),
             'cpus-per-task':str(cpus_per_task),
-            'mem':str(mem),
+            'mem':f'{str(mem)}G',
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,
