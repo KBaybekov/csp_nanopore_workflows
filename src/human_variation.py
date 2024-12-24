@@ -97,7 +97,11 @@ def main():
     while samples or pending_jobs:
         # Choose sample
         if samples:
-            sample_job_ids = dict.fromkeys(stages, []).copy()
+            sample_job_ids = {}
+            for stage in stages:
+                sample_job_ids[stage] = []
+            #sample_job_ids = dict.fromkeys(stages, [])
+            
             #print('sample_job_ids', sample_job_ids)
             # pop sample from initial sample list
             sample = samples.pop(0)
