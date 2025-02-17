@@ -12,6 +12,7 @@ import os
 import time
 import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import argparse
 from utils.common import get_dirs_in_dir, load_yaml, get_samples_in_dir_tree
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import get_slurm_job_status
@@ -21,15 +22,44 @@ def ch_d(d):
     print(d)
     exit()
 
+
+def parse_cli_args() -> dict:
+    """
+    Функция для обработки аргументов командной строки
+    """
+           
+    parser = argparse.ArgumentParser(
+        description = 'Генерация и загрузка в очередь Slurm заданий по обработке данных Oxford Nanopore от .fast5 до репортов', 
+        epilog = '©Kirill Baybekov'
+    )
+    
+    # Основные аргументы с описаниями из YAML
+    parser.add_argument('-i', '--input_dir', required=True, type=str, help='директория с папками, содержащими данные Oxford Nanopore')
+    parser.add_argument('-o', '--output_dir', required=True, type=str, help='выходная директория')
+    parser.add_argument('-t', '--threads_per_machine', required=True, default='', type=str, help='количество потоков на машину')
+    parser.add_argument('-m', '--dorado_model', required=True, default='', type=str, help='папка модели dorado')
+    parser.add_argument('-tmp', '--tmp_dir', required=True, default='', type=str, help='папка для временных файлов')
+
+
+    # Парсим аргументы
+    args = parser.parse_args()
+    # Преобразуем Namespace в словарь
+    args = vars(args)  # Преобразуем объект Namespace в словарь
+
+    return args
+
+
 def create_sample_sections_in_dict(target_dict:dict, sample:str, sections:list, val) -> dict:
     target_dict.update({sample:{section:val.copy() for section in sections}})
     return target_dict
+
 
 def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job_ids:list) -> None:
     #print('pending_jobs', pending_jobs)
     #print('job_results', job_results)
     pending_jobs[sample][stage].extend(job_ids)
     job_results[sample][stage].update({id:'' for id in job_ids})
+
 
 def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
     print(timestamp)
@@ -53,6 +83,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
         print()
 
     return (pending_jobs, job_results)
+
 
 def update_pending_jobs(pending_jobs, job_results):
     # check every sample in pending_jobs
@@ -78,6 +109,7 @@ def update_pending_jobs(pending_jobs, job_results):
             stages[stage] = updated_jobs
 
     return pending_jobs
+
 
 def main():
     pending_jobs = {}
@@ -122,7 +154,6 @@ def main():
             sample_job_ids['converting'] = convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
-                                                                      ntasks=tasks_per_machine_converting,
                                                                       exclude_nodes=exclude_node_cpu,
                                                                       working_dir=working_dir)
             
@@ -193,13 +224,14 @@ def main():
         for f in files2move:
             os.system(f'mv {f} {d_path}')
 
-if len(sys.argv) < 5:
-    raise SyntaxError(print('Usage: human_variation.py in_dir out_dir dorado_model threads'))
+args = parse_cli_args()
 
-in_dir = f'{os.path.normpath(os.path.join(sys.argv[1]))}{os.sep}'
-out_dir = f'{os.path.normpath(os.path.join(sys.argv[2]))}{os.sep}'
-dorado_model = f'{os.path.normpath(os.path.join(sys.argv[3]))}{os.sep}'
-threads_per_machine = sys.argv[4]
+in_dir = f'{os.path.normpath(os.path.join(args["input_dir"]))}{os.sep}'
+out_dir = f'{os.path.normpath(os.path.join(args["output_dir"]))}{os.sep}'
+dorado_model = f'{os.path.normpath(os.path.join(args["dorado_model"]))}{os.sep}'
+threads_per_machine = args["threads_per_machine"]
+working_dir = f'{os.path.normpath(os.path.join(args["tmp_dir"]))}{os.sep}'
+
 
 ref_fasta = '/common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
 ref_tr_bed = '/common_share/nanopore_service_files/ref_files/human_GRCh38_no_alt_analysis_set.trf.bed'
@@ -210,7 +242,7 @@ exclude_node_cpu = ['dgx10']
 exclude_node_gpu = []
 
 # directory for running slurm jobs
-working_dir = '/common_share/tmp/slurm/'
+#working_dir = '/common_share/tmp/slurm/'
 
 configs = f"{os.path.dirname(os.path.realpath(__file__).replace('src', 'configs'))}/"
 
@@ -222,16 +254,23 @@ for d in directories.keys():
     directories[d]['path'] = f'{os.path.join(out_dir, directories[d]["name"])}{os.sep}'
 
 # How many tasks should be run on one machine concurrently 
-tasks_per_machine_converting = '16'
+"""tasks_per_machine_converting = '16'
 tasks_per_machine_aligning = '4'
 tasks_per_machine_calling_sv = '8'
 tasks_per_machine_calling_mod = '32'
+
 
 # How many threads per task we need
 threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machine_converting)), 16))
 threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 64))
 threads_per_calling_sv = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_sv)), 32))
-threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 8))
+threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 8))"""
+
+threads_per_converting = 64
+threads_per_align = 64
+threads_per_calling_sv = 64
+threads_per_calling_mod = 64
+
 
 # unfinished jobs will be stored there.
 # Structure: {sample:{stage1:[job_id_0, job_id_1], stage2:[job_id_2]}} 

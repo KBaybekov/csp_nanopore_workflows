@@ -24,7 +24,7 @@ def get_fast5_dirs(dir:str) -> list:
         raise FileNotFoundError('FAST5 файлы не найдены!')
     return list(set(fast5s))
 
-def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, ntasks:int, exclude_nodes:list=[], working_dir:str='') ->list :
+def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str, exclude_nodes:list=[], working_dir:str='') ->list :
     """
     Запуск задачи конвертации fast5 -> pod5 на CPU. Задача выполняется на одной ЦПУ ноде
     :param fast5_dirs: папки с файлами для конвертации
@@ -42,7 +42,7 @@ def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str,
         command = f"pod5 convert fast5 {fast5_dir}*.fast5 --output {pod5_dir}/{pod5_name}.pod5 --threads {threads}"
         job_id = submit_slurm_job(command, partition="cpu_nodes",
                                   job_name=f"pod5_convert_{sample}_{pod5_name}",
-                                  nodes=1, cpus_per_task=threads, ntasks=ntasks, exclude_nodes=exclude_nodes, working_dir=working_dir)
+                                  nodes=1, cpus_per_task=threads, exclude_nodes=exclude_nodes, working_dir=working_dir)
         job_ids.append(job_id)
     return job_ids
 
@@ -61,7 +61,7 @@ def aligning(sample:str, ubam:str, out_dir:str, mod_type:str, ref:str, threads:s
     """Запуск выравнивания на CPU нодах"""
     bam_dir = f'{os.path.join(out_dir,sample)}{os.sep}'
     bam = ubam.replace(os.path.dirname(ubam), bam_dir).replace('.ubam', '.bam')
-    command = f"nextflow run epi2me-labs/wf-alignment --bam {ubam} --out_dir {bam_dir} --references {ref} --threads {threads}"
+    command = f"nextflow run epi2me-labs/wf-alignment --bam {ubam} --out_dir {bam_dir} --references {ref} --threads {threads} -with-report"
     return (submit_slurm_job(command, partition="cpu_nodes", nodes=1, cpus_per_task=threads,
                             job_name=f"align_{sample}_{mod_type}",
                             dependency=dependency, exclude_nodes=exclude_nodes, working_dir=working_dir),
@@ -70,7 +70,7 @@ def aligning(sample:str, ubam:str, out_dir:str, mod_type:str, ref:str, threads:s
 def modifications_lookup(sample:str, bam:str, out_dir:str, mod_type:str, model:str, ref:str, threads:str, dependency:list, exclude_nodes:list=[], working_dir:str=''):
     """Запуск выравнивания на CPU нодах"""
     
-    command = f"nextflow run epi2me-labs/wf-human-variation --bam {bam} --ref {ref} --mod --threads {threads} --out_dir {out_dir} --sample_name {sample} --override_basecaller_cfg {model} --force_strand"
+    command = f"nextflow run epi2me-labs/wf-human-variation --bam {bam} --ref {ref} --mod --threads {threads} --out_dir {out_dir} --sample_name {sample} --override_basecaller_cfg {model} --force_strand -with-report"
     return submit_slurm_job(command, partition="cpu_nodes", nodes=1, cpus_per_task=threads,
                             job_name=f"modkit_{sample}_{mod_type}",
                             dependency=dependency, exclude_nodes=exclude_nodes, working_dir=working_dir)
@@ -79,7 +79,7 @@ def sv_lookup(sample:str, bam:str, out_dir:str, mod_type:str, tr_bed:str, model:
               threads:str, dependency:list, dependency_type:str, exclude_nodes:list=[], working_dir:str=''):
     """Запуск выравнивания на CPU нодах"""
     
-    command = f"nextflow run epi2me-labs/wf-human-variation --bam {bam} --ref {ref} --snp --cnv --str --sv --phased --tr_bed {tr_bed} --threads {threads} --out_dir {out_dir} --sample_name {sample} --override_basecaller_cfg {model} --force_strand"
+    command = f"nextflow run epi2me-labs/wf-human-variation --bam {bam} --ref {ref} --snp --cnv --str --sv --phased --tr_bed {tr_bed} --threads {threads} --out_dir {out_dir} --sample_name {sample} --override_basecaller_cfg {model} --force_strand -with-report"
     return submit_slurm_job(command, partition="cpu_nodes", nodes=1, cpus_per_task=threads,
                             job_name=f"sv_{sample}_{mod_type}",
                             dependency=dependency, dependency_type=dependency_type, exclude_nodes=exclude_nodes, working_dir=working_dir)
