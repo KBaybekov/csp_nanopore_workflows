@@ -13,9 +13,9 @@ import time
 import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
-from utils.common import get_dirs_in_dir, load_yaml, get_samples_in_dir_tree
+from utils.common import get_dirs_in_dir, load_yaml, get_samples_in_dir_tree, move_sample_files_2_res_dir
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
-from utils.slurm import get_slurm_job_status
+from utils.slurm import get_slurm_job_status, cancel_slurm_job
 
 
 def ch_d(d):
@@ -62,25 +62,70 @@ def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job
 
 
 def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
-    print(timestamp)
+    RED = "\033[31m"
+    YELLOW = "\033[33m"
+    GREEN = "\033[32m"
+    BLUE = "\033[34m"
+    WHITE ="\033[0m"
+    PURPLE = "\033[35m"
+    status_coloring = {'PENDING':YELLOW, 'RUNNING':BLUE, 'COMPLETED':GREEN, 'FAILED':RED, 'REMOVED':PURPLE}
+
     jobs_data = get_slurm_job_status()
     # check every sample in pending_jobs
     for sample, stages in pending_jobs.items():
-        data2print = []
+        
         # check every  stage in sample
         for stage, jobs in stages.items():
+            
             for job in jobs:
-                # check for job in slurmd; if not found return not found info
+                # check for job in slurmd
                 job_status = jobs_data.get(int(job), 'JOB NOT FOUND')
                 # if job is found, check for its status
-                if isinstance(job_status, dict):
-                    job_status = job_status.get('job_state', 'UNKNOWN_STATE')
-                job_results[sample][stage][job] = job_status
-                data2print.append(f'{job} ({job_status})')
-                if job_status == 'COMPLETED':
-                    pending_jobs[sample][stage].remove(job)
-            print(f'{stage.upper()}[{", ".join(data2print)}]', end='\t')
-        print()
+                job_state = job_status.get('job_state', 'UNKNOWN_STATE')
+                if job_state == 'RUNNING':
+                    node = f", {job_status.get('nodes', 'UNKNOWN_NODE')}"
+                elif job_state == 'UNKNOWN_STATE':
+                    pending_jobs, job_results = remove_job_from_processing(pending_jobs=pending_jobs, job_results=job_results,
+                                                                      sample=sample, stage=stage, job=job, job_state='JOB NOT FOUND')
+
+                # we need only one sv_lookup per sample, so other will be cancelled if job started
+                if stage == 'sv_lookup' and job_state == 'RUNNING' and len(jobs) > 1:
+                    job_to_cancel = jobs[1] if job == jobs[0] else jobs[0]
+                    cancel_slurm_job(job_to_cancel=int(job_to_cancel))
+                    pending_jobs, job_results = remove_job_from_processing(pending_jobs=pending_jobs, job_results=job_results,
+                                                                      sample=sample, stage=stage, job=job_to_cancel, job_state='REMOVED')
+
+                job_results[sample][stage][job] = job_state
+                
+                
+                if job_state == 'COMPLETED':
+                    pending_jobs, job_results = remove_job_from_processing(pending_jobs=pending_jobs, job_results=job_results,
+                                                                      sample=sample, stage=stage, job=job, job_state='COMPLETED')
+
+    data2print = [timestamp]
+    for sample, stages in job_results.items():
+        data2print.append(f'{sample}:')
+        for stage, jobs in stages.items():
+            stage_data = []
+            stage_data.append(f'\t{stage.upper()}: ')
+            for job in jobs:
+                node = ''
+                job_state = job_results[sample][stage][job]
+                if job_state == 'RUNNING':
+                    node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
+                status_color = status_coloring.get(job_state, WHITE)
+                stage_data.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')
+
+            data2print.append(''.join(stage_data))
+    data2print = f'\n'.join(data2print)
+    os.system('clear')
+    print(data2print)
+
+    return (pending_jobs, job_results)
+
+def remove_job_from_processing(pending_jobs:dict, job_results:dict, sample:str, stage:str, job:int, job_state:str) -> tuple:
+    pending_jobs[sample][stage].remove(job)
+    job_results[sample][stage][job] = job_state
 
     return (pending_jobs, job_results)
 
@@ -121,7 +166,13 @@ def main():
 
     sample_dirs = get_dirs_in_dir(dir=in_dir)
     # Create dict with sample_name:[sample_fast5s_dirs] as key:val
-    sample_data = {os.path.basename(os.path.normpath(s)):get_fast5_dirs(dir=s) for s in sample_dirs}
+    sample_data = {}
+    for s in sample_dirs:
+        f5d = get_fast5_dirs(dir=s)
+        if f5d:
+            sample_data.update({os.path.basename(os.path.normpath(s)):f5d})
+    found_samples = "\n\t".join(sample_data.keys())
+    print(f'FAST5 data found for samples:\n\t{found_samples}')
     #print(sample_data)
     # Create list of samples for iteration
     samples = list(sample_data.keys())
@@ -154,6 +205,7 @@ def main():
             sample_job_ids['converting'] = convert_fast5_to_pod5(fast5_dirs=fast5_dirs, sample=sample,
                                                                       out_dir=directories['pod5_dir']['path'],
                                                                       threads=threads_per_converting,
+                                                                      mem=mem_per_converting,
                                                                       exclude_nodes=exclude_node_cpu,
                                                                       working_dir=working_dir)
             
@@ -168,6 +220,7 @@ def main():
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
                                                 mod_type=mod_type, model=dorado_model,
+                                                mem=mem_per_basecalling, threads=threads_per_basecalling,
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
@@ -176,8 +229,8 @@ def main():
                 
                 # Alignment results will be stored in bam dir of sample.
                 #CPU
-                job_id_aligning, bam = aligning(sample=sample, ubam=ubam, out_dir=directories['bam_dir']['path'],
-                                           mod_type=mod_type, ref=dorado_model, threads=threads_per_align,
+                job_id_aligning, bam = aligning(sample=sample, ubam=ubam, out_dir=directories['other_dir']['path'],
+                                           mod_type=mod_type, ref=ref_fasta, threads=threads_per_align, mem=mem_per_align,
                                            dependency=[job_id_basecalling], working_dir=working_dir, exclude_nodes=exclude_node_cpu)
                 sample_job_ids['aligning'].append(job_id_aligning)
                 #print('job_id_aligning', job_id_aligning)
@@ -185,17 +238,16 @@ def main():
                 # mod lookup results will be stored in common dir of sample.
                 #CPU
                 sample_job_ids['mod_lookup'].append(modifications_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
-                                                     mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
-                                                     threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir,
-                                                     exclude_nodes=exclude_node_cpu))
+                                                     mod_type=mod_type, model=dorado_model, ref=ref_fasta, mem=mem_per_calling_mod,
+                                                     threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir, exclude_nodes=exclude_node_cpu))
 
-            # SV calling will be performed just once with using of the first ready BAM 
-            # SV lookup results will be stored in common dir of sample.
-            #CPU
-            sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
-                                                     mod_type=mod_type, model=os.path.basename(dorado_model), ref=ref_fasta,
-                                                     tr_bed=ref_tr_bed, threads=threads_per_calling_sv, dependency=sample_job_ids['aligning'],
-                                                     dependency_type='any', working_dir=working_dir, exclude_nodes=exclude_node_cpu))
+                # SV calling will be performed just once with using of the first ready BAM 
+                # SV lookup results will be stored in common dir of sample.
+                #CPU
+                sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
+                                                        mod_type=mod_type, model=dorado_model, ref=ref_fasta, mem=mem_per_calling_sv,
+                                                        tr_bed=ref_tr_bed, threads=threads_per_calling_sv, dependency=[job_id_aligning],
+                                                        working_dir=working_dir, exclude_nodes=exclude_node_cpu))
             
             # Sample related job ids will be stored in logging dict
             #print(sample_job_ids)
@@ -215,14 +267,21 @@ def main():
         # pause before next check
         time.sleep(10)
 
-    print("All samples processed. Moving files to their folders...")
-    dir2search_in = directories['other_dir']['path']
+    #move sample's files if all tasks are completed
+    """    for sample, stages in job_results.items():
+            for stage in stages.keys():
+                if all(job_state == 'COMPLETED' for job_state in stage.values()):
+                    for dir in directories['out_dir'].keys():
+                        move_sample_files_2_res_dir(mask=sample, src_dir=directories['out_dir'][dir]['path'], dst_dir=directories['res_dir'][dir]['path'])"""
+
+    print("All samples processed!")
+    """dir2search_in = directories['other_dir']['path']
     for d in directories.keys():
         extensions = tuple(directories[d]['extensions'])
         d_path = directories[d]['path']
         files2move = get_samples_in_dir_tree(dir=dir2search_in, extensions=extensions, empty_ok=True)
         for f in files2move:
-            os.system(f'mv {f} {d_path}')
+            shutil.move(src=f, dst=d_path)"""
 
 args = parse_cli_args()
 
@@ -240,9 +299,6 @@ mod_bases = ['5mCG_5hmCG', '5mCG']
 # we don't want to use dgx10 for this time as CPU node
 exclude_node_cpu = ['dgx10']
 exclude_node_gpu = []
-
-# directory for running slurm jobs
-#working_dir = '/common_share/tmp/slurm/'
 
 configs = f"{os.path.dirname(os.path.realpath(__file__).replace('src', 'configs'))}/"
 
@@ -265,12 +321,18 @@ threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machin
 threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 64))
 threads_per_calling_sv = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_sv)), 32))
 threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 8))"""
-
+threads_per_basecalling = 256
 threads_per_converting = 64
 threads_per_align = 64
 threads_per_calling_sv = 64
 threads_per_calling_mod = 64
 
+# How many RAM per task we need
+mem_per_converting = 128
+mem_per_basecalling = 512
+mem_per_align = 32
+mem_per_calling_sv = 128
+mem_per_calling_mod = 128
 
 # unfinished jobs will be stored there.
 # Structure: {sample:{stage1:[job_id_0, job_id_1], stage2:[job_id_2]}} 
