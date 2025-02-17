@@ -71,12 +71,15 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
     status_coloring = {'PENDING':YELLOW, 'RUNNING':BLUE, 'COMPLETED':GREEN, 'FAILED':RED, 'REMOVED':PURPLE}
 
     jobs_data = get_slurm_job_status()
+    # check if there is still any pending job
+    no_pending_jobs = True
     # check every sample in pending_jobs
     for sample, stages in pending_jobs.items():
         
         # check every  stage in sample
         for stage, jobs in stages.items():
-            
+            no_pending_jobs = False
+
             for job in jobs:
                 # check for job in slurmd
                 job_status = jobs_data.get(int(job), 'JOB NOT FOUND')
@@ -103,6 +106,8 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
                                                                       sample=sample, stage=stage, job=job, job_state='COMPLETED')
 
     data2print = [timestamp]
+    #check if all jobs are completed (or removed, or unknown)
+    no_more_jobs = True
     for sample, stages in job_results.items():
         data2print.append(f'{sample}:')
         for stage, jobs in stages.items():
@@ -111,6 +116,10 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
             for job in jobs:
                 node = ''
                 job_state = job_results[sample][stage][job]
+
+                if job_state in ['RUNNING', 'PENDING']:
+                    no_more_jobs = False
+
                 if job_state == 'RUNNING':
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
@@ -121,7 +130,13 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
     os.system('clear')
     print(data2print)
 
-    return (pending_jobs, job_results)
+    # we stop to print slurm data
+    if (no_pending_jobs & no_more_jobs):
+        stop_slurm_monitoring = True
+    else:
+        stop_slurm_monitoring = False
+
+    return (pending_jobs, job_results, stop_slurm_monitoring)
 
 def remove_job_from_processing(pending_jobs:dict, job_results:dict, sample:str, stage:str, job:int, job_state:str) -> tuple:
     pending_jobs[sample][stage].remove(job)
@@ -262,10 +277,14 @@ def main():
         # Check pending jobs
         elif pending_jobs:
             now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
-            pending_jobs, job_results = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, timestamp=now)
+            pending_jobs, job_results, stop_slurm_monitoring = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, timestamp=now)
 
-        # pause before next check
-        time.sleep(10)
+        if stop_slurm_monitoring:
+            print('Slurm stage finished. Goodbye!')
+            exit()
+        else:
+            # pause before next check
+            time.sleep(10)
 
     #move sample's files if all tasks are completed
     """    for sample, stages in job_results.items():
