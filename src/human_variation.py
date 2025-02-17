@@ -279,12 +279,14 @@ def main():
             now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
             pending_jobs, job_results, stop_slurm_monitoring = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, timestamp=now)
 
-        if stop_slurm_monitoring:
-            print('Slurm stage finished. Goodbye!')
-            exit()
-        else:
-            # pause before next check
-            time.sleep(10)
+            if stop_slurm_monitoring:
+                print('Slurm stage finished. Goodbye!')
+                exit()
+            else:
+                # pause before next check
+                time.sleep(10)
+        # pause before next check
+        time.sleep(10)
 
     #move sample's files if all tasks are completed
     """    for sample, stages in job_results.items():
