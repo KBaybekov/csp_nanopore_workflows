@@ -70,6 +70,11 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
     print(f'Job ID for {job_name}: {job_id}')
     return job_id.removesuffix('\n')
 
+
+def cancel_slurm_job(job_to_cancel:int) -> None:
+    os.system(f'scancel {job_to_cancel}')
+
+
 def get_slurm_job_status() -> dict:
     """Проверка статуса задачи через pyslurm"""
     job_data = pyslurm.job().get().copy()

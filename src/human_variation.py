@@ -13,7 +13,7 @@ import time
 import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
-from utils.common import get_dirs_in_dir, load_yaml, get_samples_in_dir_tree, move_sample_files_2_res_dir
+from utils.common import get_dirs_in_dir, load_yaml
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import get_slurm_job_status, cancel_slurm_job
 
