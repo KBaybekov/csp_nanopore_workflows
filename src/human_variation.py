@@ -130,7 +130,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
 
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
-    os.system(f'echo "{data2print}" > {log_file}')
+    os.system(f'echo "{data2print}" >> {log_file}')
     os.system('clear')
     print(data2print)
 
