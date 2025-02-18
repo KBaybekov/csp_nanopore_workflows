@@ -130,7 +130,14 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
 
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
-    os.system(f'echo "{data2print}" >> {log_file}')
+
+    #remove color marks from data going to txt file and save it
+    data2txt = data2print
+    for color in status_coloring.values():
+        data2txt.replace(color, '')
+    os.system(f'echo "{data2txt}" >> {log_file}')
+
+    #print job data
     os.system('clear')
     print(data2print)
 
