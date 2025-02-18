@@ -11,6 +11,7 @@ import sys
 import os
 import time
 import datetime
+import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
 from utils.common import get_dirs_in_dir, load_yaml
@@ -38,6 +39,7 @@ def parse_cli_args() -> dict:
     parser.add_argument('-o', '--output_dir', required=True, type=str, help='выходная директория')
     parser.add_argument('-t', '--threads_per_machine', required=True, default='', type=str, help='количество потоков на машину')
     parser.add_argument('-m', '--dorado_model', required=True, default='', type=str, help='папка модели dorado')
+    parser.add_argument('-mp', '--dorado_models_path', default='/common_share/reference_files/dorado_models/', type=str, help='папка с моделями dorado')
     parser.add_argument('-tmp', '--tmp_dir', required=True, default='', type=str, help='папка для временных файлов')
 
 
@@ -295,9 +297,9 @@ def main():
                 exit()
             else:
                 # pause before next check
-                time.sleep(10)
+                time.sleep(30)
         # pause before next check
-        time.sleep(10)
+        time.sleep(3)
 
     #move sample's files if all tasks are completed
     """    for sample, stages in job_results.items():
@@ -324,7 +326,11 @@ log_file = f'{out_dir}log.txt'
 dorado_model = args["dorado_model"]
 threads_per_machine = args["threads_per_machine"]
 working_dir = f'{os.path.normpath(os.path.join(args["tmp_dir"]))}{os.sep}'
+if not os.path.exists(working_dir):
+    os.makedirs(working_dir, exist_ok=True)
 
+#copy model to work dir
+os.system(f'cp -r {args["dorado_models_path"]}{dorado_model} {working_dir}')
 
 ref_fasta = '/common_share/nanopore_service_files/ref_files/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna'
 ref_tr_bed = '/common_share/nanopore_service_files/ref_files/human_GRCh38_no_alt_analysis_set.trf.bed'
