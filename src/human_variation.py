@@ -308,7 +308,8 @@ args = parse_cli_args()
 
 in_dir = f'{os.path.normpath(os.path.join(args["input_dir"]))}{os.sep}'
 out_dir = f'{os.path.normpath(os.path.join(args["output_dir"]))}{os.sep}'
-dorado_model = f'{os.path.normpath(os.path.join(args["dorado_model"]))}{os.sep}'
+#dorado_model = f'{os.path.normpath(os.path.join(args["dorado_model"]))}{os.sep}'
+dorado_model = args["dorado_model"]
 threads_per_machine = args["threads_per_machine"]
 working_dir = f'{os.path.normpath(os.path.join(args["tmp_dir"]))}{os.sep}'
 
