@@ -84,7 +84,10 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
                 # check for job in slurmd
                 job_status = jobs_data.get(int(job), 'JOB NOT FOUND')
                 # if job is found, check for its status
-                job_state = job_status.get('job_state', 'UNKNOWN_STATE')
+                if isinstance(job_status, dict):
+                    job_state = job_status.get('job_state', 'UNKNOWN_STATE')
+                elif isinstance(job_status, str):
+                    job_state = job_status
                 if job_state == 'RUNNING':
                     node = f", {job_status.get('nodes', 'UNKNOWN_NODE')}"
                 elif job_state == 'UNKNOWN_STATE':
@@ -127,6 +130,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
 
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
+    os.system(f'echo "{data2print}" > {log_file}')
     os.system('clear')
     print(data2print)
 
@@ -308,6 +312,7 @@ args = parse_cli_args()
 
 in_dir = f'{os.path.normpath(os.path.join(args["input_dir"]))}{os.sep}'
 out_dir = f'{os.path.normpath(os.path.join(args["output_dir"]))}{os.sep}'
+log_file = f'{out_dir}log.txt'
 #dorado_model = f'{os.path.normpath(os.path.join(args["dorado_model"]))}{os.sep}'
 dorado_model = args["dorado_model"]
 threads_per_machine = args["threads_per_machine"]
