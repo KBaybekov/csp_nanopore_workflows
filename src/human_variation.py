@@ -11,6 +11,7 @@ import sys
 import os
 import time
 import datetime
+import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
 from utils.common import get_dirs_in_dir, load_yaml, split_list_in_chunks
@@ -217,6 +218,11 @@ def main():
             cudas_idxs.update({sample:cudas})
     #print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
+    #table for online report
+    report_table = pd.DataFrame(data={'sample':samples})
+    for st in stages:
+        report_table[st] = ''
+    ch_d(report_table)
     while samples or pending_jobs:
         # Choose sample
         if samples:
@@ -275,14 +281,14 @@ def main():
 
                 # mod lookup results will be stored in common dir of sample.
                 #CPU
-                sample_job_ids['mod_lookup'].append(modifications_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
+                sample_job_ids['mod_lookup'].append(modifications_lookup(sample=sample, bam=bam, out_dir=f"{directories['other_dir']['path']}mod/",
                                                      mod_type=mod_type, model=dorado_model, ref=ref_fasta, mem=mem_per_calling_mod,
                                                      threads=threads_per_calling_mod, dependency=[job_id_aligning], working_dir=working_dir, exclude_nodes=exclude_node_cpu))
 
                 # SV calling will be performed just once with using of the first ready BAM 
                 # SV lookup results will be stored in common dir of sample.
                 #CPU
-                sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=directories['other_dir']['path'],
+                sample_job_ids['sv_lookup'].append(sv_lookup(sample=sample, bam=bam, out_dir=f"{directories['other_dir']['path']}snp_sv_str_cnv/",
                                                         mod_type=mod_type, model=dorado_model, ref=ref_fasta, mem=mem_per_calling_sv,
                                                         tr_bed=ref_tr_bed, threads=threads_per_calling_sv, dependency=[job_id_aligning],
                                                         working_dir=working_dir, exclude_nodes=exclude_node_cpu))
@@ -308,8 +314,7 @@ def main():
             else:
                 # pause before next check
                 time.sleep(27)
-        # pause before next check
-        time.sleep(3)
+        
 
     #move sample's files if all tasks are completed
     """    for sample, stages in job_results.items():

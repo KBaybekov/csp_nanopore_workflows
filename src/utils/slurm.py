@@ -51,7 +51,6 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
                     val = ','.join(exclude_nodes)
                 if opt == 'mem':
                     val = f'{str(mem)}G'
-                    print(val)
                 slurm_script.append(option_str.format(opt, val))
         else:
             slurm_script.extend(['\n', val])
@@ -64,7 +63,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
         print(slurm_stderr)
 
     job_id, stderr = run_shell_cmd(cmd=f"squeue -n {job_name} | tail -1| awk '{{print $1}}'")
-    print(f'Job ID for {job_name}: {job_id}')
+    #print(f'Job ID for {job_name}: {job_id}')
     return job_id.removesuffix('\n')
 
 
