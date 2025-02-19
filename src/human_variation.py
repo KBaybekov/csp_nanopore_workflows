@@ -237,7 +237,7 @@ def main():
     for st in stages:
         report_table[st] = ''
     report_table.set_index(keys='sample', inplace=True)
-    ch_d(report_table)
+    #ch_d(report_table)
     while samples or pending_jobs:
         # Choose sample
         if samples:
