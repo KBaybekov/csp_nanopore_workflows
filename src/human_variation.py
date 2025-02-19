@@ -131,8 +131,8 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 status_color = status_coloring.get(job_state, WHITE)
                 stage_cell.append(f'{job} ({job_state}{node})')
                 stage_cell2print.append(f'{job} ({status_color}{job_state}{WHITE}{node})')
-            table.loc[sample, stage] = ', '.join(stage_cell)
-            table2print.loc[sample, stage] = ', '.join(stage_cell2print)
+            table.loc[sample, stage] = '\n'.join(stage_cell)
+            table2print.loc[sample, stage] = '\n'.join(stage_cell2print)
             
 
             """stage_data = []
@@ -155,7 +155,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
     os.system(f'echo "{timestamp}\n{table.to_string()}" >> {log_file}')
 
     #print job data
-    os.system('clear')
+    #os.system('clear')
     print(data2print)
 
     # we stop to print slurm data
