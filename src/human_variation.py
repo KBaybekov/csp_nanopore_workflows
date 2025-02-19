@@ -131,7 +131,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 status_color = status_coloring.get(job_state, WHITE)
                 stage_cell.append(f'{job} ({job_state}{node})')
                 stage_data2print.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')
-            data2print.append(''.join(stage_data))
+            data2print.append(''.join(stage_data2print))
             table.loc[sample, stage] = ', '.join(stage_cell)
             #table2print.loc[sample, stage] = ', '.join(stage_cell2print)
     
