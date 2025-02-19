@@ -117,6 +117,8 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
     for sample, stages in job_results.items():
         data2print.append(f'{sample}:')
         for stage, jobs in stages.items():
+            stage_cell = []
+            stage_cell2print = []
             for job in jobs:
                 node = ''
                 job_state = job_results[sample][stage][job]
@@ -127,8 +129,11 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 if job_state == 'RUNNING':
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
-                table.loc[sample, stage] = f'{job} ({job_state}{node})'
-                table2print[sample, stage] = f'{job} ({status_color}{job_state}{WHITE}{node})'
+                stage_cell.append(f'{job} ({job_state}{node})')
+                stage_cell2print.append(f'{job} ({status_color}{job_state}{WHITE}{node})')
+            table.loc[sample, stage] = ', '.join(stage_cell)
+            table2print.loc[sample, stage] = ', '.join(stage_cell2print)
+            
 
             """stage_data = []
             stage_data.append(f'\t{stage.upper()}: ')
