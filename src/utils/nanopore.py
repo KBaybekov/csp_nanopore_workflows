@@ -50,7 +50,7 @@ def convert_fast5_to_pod5(fast5_dirs:list, sample:str, out_dir:str, threads:str,
         job_ids.append(job_id)
     return job_ids
 
-def basecalling(sample:str, in_dir:str, out_dir:str, mod_type:str, model:str, mem:int, threads:int, cudas:str, dependency:list, working_dir:str='') -> tuple:
+def basecalling(sample:str, in_dir:str, out_dir:str, mod_type:str, model:str, mem:int, threads:int, dependency:list, working_dir:str='') -> tuple:
     """Запуск бейсколлинга на GPU"""
 
     pod5_dir = f'{os.path.join(in_dir,sample)}{os.sep}'
@@ -58,7 +58,7 @@ def basecalling(sample:str, in_dir:str, out_dir:str, mod_type:str, model:str, me
     os.makedirs(name=ubam_dir, exist_ok=True)
     ubam = f"{ubam_dir}{sample}_{mod_type.replace('_', '-')}.ubam"
 
-    command = f"{dorado_bin} basecaller {model} {pod5_dir} --batchsize 2048 --device cuda:{cudas} --modified-bases {mod_type} > {ubam}"
+    command = f"{dorado_bin} basecaller {model} {pod5_dir} --batchsize 2048 --modified-bases {mod_type} > {ubam}"
     return (submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}_{mod_type}", mem=mem, cpus_per_task=threads, dependency=dependency, working_dir=working_dir),
              ubam)
 

@@ -14,7 +14,7 @@ import datetime
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
-from utils.common import get_dirs_in_dir, load_yaml, split_list_in_chunks
+from utils.common import get_dirs_in_dir, load_yaml, get_dir_size
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import get_slurm_job_status, cancel_slurm_job
 
@@ -215,24 +215,21 @@ def main():
     for s in sample_dirs:
         f5d = get_fast5_dirs(dir=s)
         if f5d:
-            sample_data.update({os.path.basename(os.path.normpath(s)):f5d})
-    found_samples = "\n\t".join(sample_data.keys())
-    print(f'FAST5 data found for samples:\n\t{found_samples}')
+            sample_size = 0
+            for d in f5d:
+                sample_size += get_dir_size(dir_path=d)
+            sample_data.update({os.path.basename(os.path.normpath(s)):[f5d, sample_size]})
+    sample_data_sorted = {k:v for k, v in sorted(sample_data.items(), key=lambda item: item[1][1])}
+    ch_d(sample_data_sorted)
+    found_samples = "\n\t".join(sample_data_sorted.keys())
+    print(f'FAST5 data found for samples (sorted by size):\n\t{found_samples}')
     time.sleep(5)
     #print(sample_data)
     # Create list of samples for iteration
-    samples = list(sample_data.keys())
-    samples.sort()
+    samples = list(sample_data_sorted.keys())
     #?? we already processed these samples
     for s in ['770720000101', '770720030104']:
         samples.remove(s)
-    # We will split sample list in 4 chunks for using 4 concurrent gpu processes
-    samples_chunks = list(split_list_in_chunks(lst=samples, chunks=concurrent_gpu_processes))
-    cudas_idxs = {}
-    for idx, lst in enumerate(samples_chunks):
-        cudas = f'{6-idx*2},{7-idx*2}'
-        for sample in lst:
-            cudas_idxs.update({sample:cudas})
     #print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     #table for online report
@@ -259,7 +256,7 @@ def main():
                                                           sections=stages, val=[])
             job_results = create_sample_sections_in_dict(target_dict=job_results, sample=sample,
                                                           sections=stages, val={})
-            fast5_dirs = sample_data[sample]
+            fast5_dirs = sample_data_sorted[sample][0]
             #print('pending_jobs', pending_jobs, 'job_results', job_results)
             #exit()
             # Pulling converting task, one per job
@@ -282,7 +279,7 @@ def main():
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
                                                 mod_type=mod_type, model=dorado_model,
-                                                mem=mem_per_basecalling, threads=threads_per_basecalling, cudas=cudas_idxs[sample],
+                                                mem=mem_per_basecalling, threads=threads_per_basecalling,
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
@@ -396,13 +393,13 @@ threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machi
 
 # How many RAM per task we need
 mem_per_converting = 128
-mem_per_basecalling = 480
+mem_per_basecalling = 2048
 mem_per_align = 32
 mem_per_calling_sv = 128
 mem_per_calling_mod = 64
 
 #how many concurrent gpu processes we need
-concurrent_gpu_processes = 4
+#concurrent_gpu_processes = 4
 """На один образец (~1,3 Тб) 8 GPU A100 тратят 104 минуты.
    Соответственно, если мы будем обрабатывать сразу 4 образца,
    среднее затраченное время будет ~416 минут 

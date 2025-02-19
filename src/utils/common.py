@@ -90,6 +90,18 @@ def run_shell_cmd(cmd:str, timeout:int=None) -> tuple:
     stdout, stderr = result.communicate(timeout=timeout)
     return (stdout, stderr)
 
+def get_dir_size(dir_path:str):
+    """Возвращает размер папки в байтах"""
+    total_size = 0
+    for dirpath, _, filenames in os.walk(dir_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+
+    return total_size
+
 def split_list_in_chunks(lst:list, chunks:int):
     """Yield successive n chunks from lst.
     Usage: x = list(split_list_in_chunks(lst, chunks))
