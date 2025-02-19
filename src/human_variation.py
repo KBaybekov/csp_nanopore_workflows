@@ -113,12 +113,12 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
     data2print = [timestamp]
     #check if all jobs are completed (or removed, or unknown)
     no_more_jobs = True
-    table2print = table.copy()
     for sample, stages in job_results.items():
         data2print.append(f'{sample}:')
         for stage, jobs in stages.items():
             stage_cell = []
-            stage_cell2print = []
+            stage_data2print = []
+            stage_data2print.append(f'\t{stage.upper()}: ')
             for job in jobs:
                 node = ''
                 job_state = job_results[sample][stage][job]
@@ -130,10 +130,11 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
                 stage_cell.append(f'{job} ({job_state}{node})')
-                stage_cell2print.append(f'{job} ({status_color}{job_state}{WHITE}{node})')
+                stage_data2print.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')
+            data2print.append(''.join(stage_data))
             table.loc[sample, stage] = ', '.join(stage_cell)
-            table2print.loc[sample, stage] = ', '.join(stage_cell2print)
-            
+            #table2print.loc[sample, stage] = ', '.join(stage_cell2print)
+    
 
             """stage_data = []
             stage_data.append(f'\t{stage.upper()}: ')
@@ -149,7 +150,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 status_color = status_coloring.get(job_state, WHITE)
                 stage_data.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')"""
 
-    data2print.append(''.join(table2print.to_string(index=False).replace('\t', '    ')))
+    #data2print.append(''.join(table2print.to_string(index=False).replace('\t', '    ')))
     data2print = f'\n'.join(data2print)
     timestamp2log = timestamp + '\n'
     table2log = table.to_string().replace('\t', '    ')
