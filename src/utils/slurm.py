@@ -2,7 +2,7 @@ import pyslurm
 import os
 from src.utils.common import run_shell_cmd
 
-def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1,
+def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='', nodes:int=1, gpus:int=0,
                      cpus_per_task:str='', mem='', ntasks:int=1, dependency:list=None, dependency_type:str='all',
                      exclude_nodes:list=[]) -> str :
     """Отправка задачи в SLURM
@@ -32,6 +32,7 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
             'ntasks':str(ntasks),
             'cpus-per-task':str(cpus_per_task),
             'mem':mem,
+            'gpus-per-task':gpus,
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,

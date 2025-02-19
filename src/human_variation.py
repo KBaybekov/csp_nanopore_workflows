@@ -11,10 +11,9 @@ import sys
 import os
 import time
 import datetime
-import shutil
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import argparse
-from utils.common import get_dirs_in_dir, load_yaml
+from utils.common import get_dirs_in_dir, load_yaml, split_list_in_chunks
 from utils.nanopore import aligning, basecalling, modifications_lookup, sv_lookup, convert_fast5_to_pod5, get_fast5_dirs
 from utils.slurm import get_slurm_job_status, cancel_slurm_job
 
@@ -80,8 +79,8 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
         
         # check every  stage in sample
         for stage, jobs in stages.items():
-            no_pending_jobs = False
-
+            if jobs:
+                no_pending_jobs = False
             for job in jobs:
                 # check for job in slurmd
                 job_status = jobs_data.get(int(job), 'JOB NOT FOUND')
@@ -132,6 +131,10 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
 
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
+
+
+    #!!
+    ch_d(data2print)
 
     #remove color marks from data going to txt file and save it
     data2txt = data2print
@@ -201,10 +204,20 @@ def main():
             sample_data.update({os.path.basename(os.path.normpath(s)):f5d})
     found_samples = "\n\t".join(sample_data.keys())
     print(f'FAST5 data found for samples:\n\t{found_samples}')
+    time.sleep(5)
     #print(sample_data)
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
+    ch_d(samples)
+    # We will split sample list in 4 chunks for using 4 concurrent gpu processes
+    samples_chunks = list(split_list_in_chunks(lst=samples, chunks=concurrent_gpu_processes))
+    cudas_idxs = {}
+    for idx, lst in enumerate(samples_chunks):
+        cudas = f'{6-idx*2},{7-idx*2}'
+        for sample in lst:
+            cudas_idxs.update({sample:cudas})
+    ch_d(cudas_idxs)
     #print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
@@ -248,7 +261,7 @@ def main():
                                                  in_dir=directories['pod5_dir']['path'],
                                                  out_dir=directories['ubam_dir']['path'],
                                                 mod_type=mod_type, model=dorado_model,
-                                                mem=mem_per_basecalling, threads=threads_per_basecalling,
+                                                mem=mem_per_basecalling, threads=threads_per_basecalling, cudas=cudas_idxs[sample],
                                                 working_dir=working_dir,
                                                 dependency=sample_job_ids['converting'])
                 sample_job_ids['basecalling'].append(job_id_basecalling)
@@ -297,7 +310,7 @@ def main():
                 exit()
             else:
                 # pause before next check
-                time.sleep(30)
+                time.sleep(27)
         # pause before next check
         time.sleep(3)
 
@@ -350,29 +363,30 @@ for d in directories.keys():
     directories[d]['path'] = f'{os.path.join(out_dir, directories[d]["name"])}{os.sep}'
 
 # How many tasks should be run on one machine concurrently 
-"""tasks_per_machine_converting = '16'
-tasks_per_machine_aligning = '4'
+tasks_per_machine_converting = '16'
+tasks_per_machine_aligning = '6'
 tasks_per_machine_calling_sv = '8'
-tasks_per_machine_calling_mod = '32'
+tasks_per_machine_calling_mod = '16'
 
-
-# How many threads per task we need
-threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machine_converting)), 16))
-threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 64))
+threads_per_basecalling = 64 #T
+threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machine_converting)), 16)) #T
+threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 40)) #T
 threads_per_calling_sv = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_sv)), 32))
-threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 8))"""
-threads_per_basecalling = 256
-threads_per_converting = 64
-threads_per_align = 64
-threads_per_calling_sv = 64
-threads_per_calling_mod = 64
+threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_mod)), 16))
 
 # How many RAM per task we need
 mem_per_converting = 128
 mem_per_basecalling = 512
 mem_per_align = 32
 mem_per_calling_sv = 128
-mem_per_calling_mod = 128
+mem_per_calling_mod = 64
+
+#how many concurrent gpu processes we need
+concurrent_gpu_processes = 4
+"""На один образец (~1,3 Тб) 8 GPU A100 тратят 104 минуты.
+   Соответственно, если мы будем обрабатывать сразу 4 образца,
+   среднее затраченное время будет ~416 минут 
+   (увеличение времени кратно уменьшению количества видеокарт на задачу)"""
 
 # unfinished jobs will be stored there.
 # Structure: {sample:{stage1:[job_id_0, job_id_1], stage2:[job_id_2]}} 

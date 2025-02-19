@@ -89,3 +89,20 @@ def run_shell_cmd(cmd:str, timeout:int=None) -> tuple:
                                 universal_newlines=True, executable="/bin/bash", bufsize=1, cwd=None, env=None)
     stdout, stderr = result.communicate(timeout=timeout)
     return (stdout, stderr)
+
+def split_list_in_chunks(lst:list, chunks:int):
+    """Yield successive n chunks from lst.
+    Usage: x = list(split_list_in_chunks(lst, chunks))
+
+    !! ДОРАБОТАТЬ !!
+    :return: [1,2,3,4,5,6,7,8] -> [[1, 2], [3, 4], [5, 6], [7, 8]]
+    """
+    #Проводим целочисленное деление
+    n = len(lst)//chunks
+    #Определяем остаток
+    residue = len(lst)%chunks
+    #Если остаток есть, то делаем
+    if residue > 0:
+        n+=1
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
