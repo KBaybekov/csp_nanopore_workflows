@@ -127,7 +127,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 if job_state == 'RUNNING':
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
-                #table.loc[]
+                table.loc[sample, stage] = f'{job} ({job_state}{node})'
 
 
             stage_data = []
@@ -146,7 +146,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
 
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
-
+    ch_d(table)
     #remove color marks from data going to txt file and save it
     data2txt = data2print
     for color in status_coloring.values():
