@@ -331,7 +331,7 @@ def main():
                 exit()
             else:
                 # pause before next check
-                time.sleep(27)
+                time.sleep(57)
         
 
     #move sample's files if all tasks are completed
