@@ -205,8 +205,9 @@ def main():
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-    #!!for s in ['770720000101', '770720030104']:
-    #    samples.remove(s)
+    #?? we already processed these samples
+    for s in ['770720000101', '770720030104']:
+        samples.remove(s)
     # We will split sample list in 4 chunks for using 4 concurrent gpu processes
     samples_chunks = list(split_list_in_chunks(lst=samples, chunks=concurrent_gpu_processes))
     cudas_idxs = {}
@@ -214,7 +215,6 @@ def main():
         cudas = f'{6-idx*2},{7-idx*2}'
         for sample in lst:
             cudas_idxs.update({sample:cudas})
-    ch_d(cudas_idxs)
     #print(samples)
     # Loop will proceed until we're out of jobs for submitting or samples to process
     while samples or pending_jobs:
