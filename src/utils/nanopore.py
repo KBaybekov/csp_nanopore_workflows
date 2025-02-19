@@ -58,7 +58,7 @@ def basecalling(sample:str, in_dir:str, out_dir:str, mod_type:str, model:str, me
     os.makedirs(name=ubam_dir, exist_ok=True)
     ubam = f"{ubam_dir}{sample}_{mod_type.replace('_', '-')}.ubam"
 
-    command = f"{dorado_bin} basecaller {model} {pod5_dir} --device cuda:{cudas} --modified-bases {mod_type} > {ubam}"
+    command = f"{dorado_bin} basecaller {model} {pod5_dir} --batchsize 2048 --device cuda:{cudas} --modified-bases {mod_type} > {ubam}"
     return (submit_slurm_job(command, partition="gpu_nodes", nodes=1, job_name=f"basecall_{sample}_{mod_type}", mem=mem, cpus_per_task=threads, dependency=dependency, working_dir=working_dir),
              ubam)
 

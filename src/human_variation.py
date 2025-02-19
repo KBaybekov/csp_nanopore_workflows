@@ -396,7 +396,7 @@ threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machi
 
 # How many RAM per task we need
 mem_per_converting = 128
-mem_per_basecalling = 512
+mem_per_basecalling = 480
 mem_per_align = 32
 mem_per_calling_sv = 128
 mem_per_calling_mod = 64
