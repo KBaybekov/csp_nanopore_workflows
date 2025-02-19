@@ -128,9 +128,9 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
                 table.loc[sample, stage] = f'{job} ({job_state}{node})'
+                table2print[sample, stage] = f'{job} ({status_color}{job_state}{WHITE}{node})'
 
-
-            stage_data = []
+            """stage_data = []
             stage_data.append(f'\t{stage.upper()}: ')
             for job in jobs:
                 node = ''
@@ -142,16 +142,12 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 if job_state == 'RUNNING':
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
-                stage_data.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')
+                stage_data.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')"""
 
-            data2print.append(''.join(stage_data))
+            data2print.append(''.join(table2print))
     data2print = f'\n'.join(data2print)
-    ch_d(table)
     #remove color marks from data going to txt file and save it
-    data2txt = data2print
-    for color in status_coloring.values():
-        data2txt.replace(color, '')
-    os.system(f'echo "{data2txt}" >> {log_file}')
+    os.system(f'echo "{table.to_string()}" >> {log_file}')
 
     #print job data
     os.system('clear')
