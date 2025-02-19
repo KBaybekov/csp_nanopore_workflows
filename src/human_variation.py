@@ -151,7 +151,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
 
     data2print.append(''.join(table2print.to_string(index=False).replace('\t', '    ')))
     data2print = f'\n'.join(data2print)
-    os.system(f'echo "{timestamp}\n{table.to_string().replace('\t', '    ')}" >> {log_file}')
+    os.system(f"""echo "{timestamp}\n{table.to_string().replace('\t', '    ')}" >> {log_file}""")
 
     #print job data
     os.system('clear')
