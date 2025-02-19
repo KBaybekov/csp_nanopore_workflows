@@ -127,7 +127,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 if job_state == 'RUNNING':
                     node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
                 status_color = status_coloring.get(job_state, WHITE)
-                table.loc[]
+                #table.loc[]
 
 
             stage_data = []
