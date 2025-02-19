@@ -36,7 +36,9 @@ def submit_slurm_job(command:str, working_dir:str, job_name:str, partition:str='
             'dependency':dependency,
             'exclude':exclude_nodes,
             'chdir':working_dir,
-            'command':command}    
+            'time':'8:00:00',
+            'command':command
+            }    
 
     for opt,val in opts.items():
         if opt != 'command':
