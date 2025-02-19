@@ -63,7 +63,7 @@ def store_job_ids(pending_jobs:dict,job_results:dict, sample:str, stage:str, job
     job_results[sample][stage].update({id:'' for id in job_ids})
 
 
-def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:str) -> tuple:
+def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.DataFrame, timestamp:str) -> tuple:
     RED = "\033[31m"
     YELLOW = "\033[33m"
     GREEN = "\033[32m"
@@ -113,9 +113,23 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
     data2print = [timestamp]
     #check if all jobs are completed (or removed, or unknown)
     no_more_jobs = True
+    table2print = table.copy()
     for sample, stages in job_results.items():
         data2print.append(f'{sample}:')
         for stage, jobs in stages.items():
+            for job in jobs:
+                node = ''
+                job_state = job_results[sample][stage][job]
+
+                if job_state in ['RUNNING', 'PENDING']:
+                    no_more_jobs = False
+
+                if job_state == 'RUNNING':
+                    node = f", {jobs_data[int(job)].get('nodes', 'UNKNOWN_NODE')}"
+                status_color = status_coloring.get(job_state, WHITE)
+                table.loc[]
+
+
             stage_data = []
             stage_data.append(f'\t{stage.upper()}: ')
             for job in jobs:
@@ -149,7 +163,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
     else:
         stop_slurm_monitoring = False
 
-    return (pending_jobs, job_results, stop_slurm_monitoring)
+    return (pending_jobs, job_results, table,  stop_slurm_monitoring)
 
 def remove_job_from_processing(pending_jobs:dict, job_results:dict, sample:str, stage:str, job:int, job_state:str) -> tuple:
     pending_jobs[sample][stage].remove(job)
@@ -222,6 +236,7 @@ def main():
     report_table = pd.DataFrame(data={'sample':samples})
     for st in stages:
         report_table[st] = ''
+    report_table.set_index(keys='sample', inplace=True)
     ch_d(report_table)
     while samples or pending_jobs:
         # Choose sample
@@ -306,7 +321,7 @@ def main():
         # Check pending jobs
         elif pending_jobs:
             now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
-            pending_jobs, job_results, stop_slurm_monitoring = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, timestamp=now)
+            pending_jobs, job_results, report_table, stop_slurm_monitoring = generate_job_status_report(pending_jobs=pending_jobs, job_results=job_results, table=report_table, timestamp=now)
 
             if stop_slurm_monitoring:
                 print('Slurm stage finished. Goodbye!')
