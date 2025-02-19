@@ -132,10 +132,6 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, timestamp:st
             data2print.append(''.join(stage_data))
     data2print = f'\n'.join(data2print)
 
-
-    #!!
-    ch_d(data2print)
-
     #remove color marks from data going to txt file and save it
     data2txt = data2print
     for color in status_coloring.values():
@@ -209,7 +205,8 @@ def main():
     # Create list of samples for iteration
     samples = list(sample_data.keys())
     samples.sort()
-    ch_d(samples)
+    #!!for s in ['770720000101', '770720030104']:
+    #    samples.remove(s)
     # We will split sample list in 4 chunks for using 4 concurrent gpu processes
     samples_chunks = list(split_list_in_chunks(lst=samples, chunks=concurrent_gpu_processes))
     cudas_idxs = {}
