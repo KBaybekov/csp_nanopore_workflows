@@ -219,8 +219,8 @@ def main():
             for d in f5d:
                 sample_size += get_dir_size(dir_path=d)
             sample_data.update({os.path.basename(os.path.normpath(s)):[f5d, sample_size]})
+    # sorting by 2nd element of list
     sample_data_sorted = {k:v for k, v in sorted(sample_data.items(), key=lambda item: item[1][1])}
-    ch_d(sample_data_sorted)
     found_samples = "\n\t".join(sample_data_sorted.keys())
     print(f'FAST5 data found for samples (sorted by size):\n\t{found_samples}')
     time.sleep(5)
