@@ -147,7 +147,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
     data2print.append(''.join(table2print.to_string()))
     data2print = f'\n'.join(data2print)
     #remove color marks from data going to txt file and save it
-    os.system(f'echo "{table.to_string()}" >> {log_file}')
+    os.system(f'echo "{timestamp}\n{table.to_string()}" >> {log_file}')
 
     #print job data
     os.system('clear')
