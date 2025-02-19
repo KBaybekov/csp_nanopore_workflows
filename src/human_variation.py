@@ -385,7 +385,7 @@ tasks_per_machine_aligning = '6'
 tasks_per_machine_calling_sv = '8'
 tasks_per_machine_calling_mod = '16'
 
-threads_per_basecalling = 64 #T
+threads_per_basecalling = 256 #T
 threads_per_converting = str(min((int(threads_per_machine)//int(tasks_per_machine_converting)), 16)) #T
 threads_per_align = str(min((int(threads_per_machine)//int(tasks_per_machine_aligning)), 40)) #T
 threads_per_calling_sv = str(min((int(threads_per_machine)//int(tasks_per_machine_calling_sv)), 32))
@@ -393,7 +393,7 @@ threads_per_calling_mod = str(min((int(threads_per_machine)//int(tasks_per_machi
 
 # How many RAM per task we need
 mem_per_converting = 128
-mem_per_basecalling = 2048
+mem_per_basecalling = 512
 mem_per_align = 32
 mem_per_calling_sv = 128
 mem_per_calling_mod = 64
