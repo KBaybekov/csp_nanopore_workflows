@@ -144,7 +144,7 @@ def generate_job_status_report(pending_jobs:dict, job_results:dict, table:pd.Dat
                 status_color = status_coloring.get(job_state, WHITE)
                 stage_data.append(f'{job} ({status_color}{job_state}{WHITE}{node})\t')"""
 
-            data2print.append(''.join(table2print))
+            data2print.append(''.join(table2print.to_string()))
     data2print = f'\n'.join(data2print)
     #remove color marks from data going to txt file and save it
     os.system(f'echo "{table.to_string()}" >> {log_file}')
